@@ -1,0 +1,15 @@
+{
+  "name": "ts-immutable",
+  "version": "0.0.1",
+  "description": "Immutable collections written in TypeScript",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "alexvictoor@gmail.com",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.4.0"
+  }
+}
