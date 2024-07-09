@@ -59,45 +59,6 @@ type Trie<T> = Node<T> | Leaf<T>;
 
 const isLeaf = <T>(trie: Trie<T>): trie is Leaf<T> => trie.isLeaf();
 
-/*
-type SearchContext<T> = {currentTrieNode: Trie<T>, index: number};
-type SearchContextStack<T> = Stack<SearchContext<T>>;
-const searchNextValue = <T>(contextStack: SearchContextStack<T>): { value?: T, searchContextStack: SearchContextStack<T>} => {
-  const context = contextStack.peek();
-  const newContextStack = contextStack.pop();
-
-  if (!context) {
-    return { value: undefined, searchContextStack: Stack.empty()}
-  }
-  const { currentTrieNode, index } = context;
-  if (index === SIZE) {
-    return searchNextValue(newContextStack);
-  }
-  
-  let newIndex = index + 1;
-  if (isLeaf(currentTrieNode)) {
-    let value = currentTrieNode.children[newIndex];
-    while (!value && newIndex < SIZE) {
-      newIndex++;
-      value = currentTrieNode.children[newIndex];
-    }
-    if (newIndex === SIZE) {
-      return searchNextValue(newContextStack);
-    }
-    return { value, searchContextStack: newContextStack.push({ currentTrieNode, index: newIndex })}
-  }
-
-  let lowerTrie = currentTrieNode.children[newIndex];
-  while (!lowerTrie && newIndex < SIZE) {
-    lowerTrie = currentTrieNode.children[newIndex];
-    newIndex++;
-  }
-  if (newIndex === SIZE) {
-    return searchNextValue(newContextStack);
-  }
-
-  return searchNextValue(newContextStack.push({ currentTrieNode, index: newIndex }).push({ currentTrieNode: lowerTrie as Trie<T>, index: -1 }));
-}*/
 
 const buildTrie = <T>(
   nodes: Array<Node<T>> | Array<Leaf<T>>,
