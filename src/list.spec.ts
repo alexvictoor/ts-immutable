@@ -5,10 +5,13 @@ const SHIFT = Math.log2(SIZE);
 const MASK = SIZE - 1;
 
 class Node<T> {
+
   constructor(
     public children: Array<Node<T> | undefined> | Array<Leaf<T> | undefined>,
     public level: number
   ) {}
+
+  public computeCapacity = () => 1 << (this.level + SHIFT);
 
   private computeChildrenIndex = (index: number): number =>  (index >> this.level) & MASK;
 
@@ -21,11 +24,11 @@ class Node<T> {
 
   //swallowCopy =  () => new Node<T>(this.children.slice(), this.level);
 
-  update = (updateIndex: number, updateValue: T) => {
+  set = (updateIndex: number, updateValue: T) => {
     const childrenIndex = this.computeChildrenIndex(updateIndex);
     const newChildren = this.children.slice();
     const child = newChildren[childrenIndex] || this.createNewEmptyChild();
-    newChildren[childrenIndex] = child.update(updateIndex, updateValue)
+    newChildren[childrenIndex] = child.set(updateIndex, updateValue)
     return new Node<T>(newChildren, this.level);
   }
 
@@ -37,6 +40,8 @@ class Leaf<T> {
   public readonly level = 0;
   constructor(public children: Array<T | undefined>) {}
 
+  public computeCapacity = () => SIZE;
+
   private computeChildrenIndex = (index: number): number => index & MASK;
 
   findValueAt = (index: number): T | undefined => {
@@ -44,7 +49,7 @@ class Leaf<T> {
     return this.children[childrenIndex];
   };
 
-  update = (updateIndex: number, updateValue: T) => {
+  set = (updateIndex: number, updateValue: T) => {
     const childrenIndex = this.computeChildrenIndex(updateIndex);
     const newChildren = this.children.slice();
     newChildren[childrenIndex] = updateValue;
@@ -129,13 +134,18 @@ export class List<T> {
   push = (value: T) => {
     if (this.length >= this.capacity) { 
       const newRoot = buildHigherCapacityTrie(this.root);
-      return new List<T>(newRoot.update(this.length, value), this.length + 1);
+      return new List<T>(newRoot.set(this.length, value), this.length + 1);
     }
-    return new List<T>(this.root.update(this.length, value), this.length + 1);
+    return new List<T>(this.root.set(this.length, value), this.length + 1);
   };
 
-  update = (index: number, value: T): List<T> => {
-    return new List<T>(this.root.update(index, value), this.length);
+  set = (index: number, value: T): List<T> => {
+    let newRoot = this.root;
+    while (index >= newRoot.computeCapacity()) { 
+      newRoot = buildHigherCapacityTrie(newRoot);
+    }
+    const newLength = index < this.length ? this.length : index + 1;
+    return new List<T>(newRoot.set(index, value), newLength);
   };
 
   [Symbol.iterator] = () => {
@@ -191,14 +201,20 @@ describe("List", () => {
 
   it("should create a new list when update is called", () => {
     const list = List.of(1, 2, 3);
-    const list2 = list.update(1, 42);
+    const list2 = list.set(1, 42);
     expect(list2.get(1)).toBe(42);
     expect(list.get(1)).toBe(2);
   });
   it("should update list on given indexes", () => {
     const list = List.of(...range(1, 34));
-    const list2 = list.update(32, 42); //?
+    const list2 = list.set(32, 42);
     expect(list2.get(32)).toBe(42);
+  });
+
+  it("should increase list size when out of range indexes are used", () => {
+    const list = List.of(1);
+    const list2 = list.set(12345, 42);
+    expect(list2.length).toBe(12346);
   });
 
   it("should not get any value when out of range", () => {
@@ -207,17 +223,17 @@ describe("List", () => {
     expect(list.get(32)).toBeUndefined();
   });
 
-  it("should push a new value without increasing capacity", () => {
+  it("should increase length when pushing a new value", () => {
     const list = List.of(1, 2, 3);
     const list2 = list.push(42);
     expect(list.length).toBe(3);
     expect(list2.length).toBe(4);
   });
 
-  it("should push a new value increasing capacity", () => {
+  it("should increase capacity when pushing a new value in an out of capacity list", () => {
     const data = range(1, 33);
     const list = List.of(...data);
-    const list2 = list.push(42); //?
+    const list2 = list.push(42);
     expect(list.get(0)).toEqual(1);
     expect(list2.get(32)).toEqual(42);
   });
