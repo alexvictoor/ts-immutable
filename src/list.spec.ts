@@ -139,6 +139,10 @@ export class List<T> {
     return new List<T>(this.root.set(this.length, value), this.length + 1);
   };
 
+  pop = () => {
+    return new List<T>(this.root, Math.max(this.length - 1, 0));
+  }
+
   with = (index: number, value: T): List<T> => {
     let newRoot = this.root;
     while (index >= newRoot.computeCapacity()) { 
@@ -175,10 +179,10 @@ describe("List", () => {
 
   it("should be created from an array", () => {
     const data = range(1, 34);
-    const list = List.of(...data); //?
-
+    const list = List.of(...data);
     expect([...list]).toHaveLength(data.length);
   });
+  
   it("should be created from an array", () => {
     const data = range(1, 32 * 32 * 31 + 2);
     const list = List.of(...data);
@@ -238,7 +242,7 @@ describe("List", () => {
     expect(list2.at(32)).toEqual(42);
   });
 
-  /*
+  
   it("should not be empty when an item has been added", () => {
     const list = List.empty();
     const list2 = list.push(123);
@@ -250,13 +254,8 @@ describe("List", () => {
     const list = List.empty();
     const list2 = list.push(123);
     const list3 = list2.pop();
-    expect(list3).toBe(list);
+    expect(list3.isEmpty()).toBe(true);
+    expect(list3.pop().isEmpty()).toBe(true);
   });
 
-  it("should be iterable", () => {
-    const list = List.empty().push(123).push(42);
-
-    expect([...list]).toEqual([42, 123]);
-  });
-*/
 });
