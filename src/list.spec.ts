@@ -124,7 +124,7 @@ export class List<T> {
 
   isEmpty = () => this.length === 0;
 
-  get = (index: number) => {
+  at = (index: number) => {
     if (index >= this.length) {
       return undefined;
     }
@@ -139,7 +139,7 @@ export class List<T> {
     return new List<T>(this.root.set(this.length, value), this.length + 1);
   };
 
-  set = (index: number, value: T): List<T> => {
+  with = (index: number, value: T): List<T> => {
     let newRoot = this.root;
     while (index >= newRoot.computeCapacity()) { 
       newRoot = buildHigherCapacityTrie(newRoot);
@@ -157,7 +157,7 @@ export class List<T> {
           return { done: true, value: undefined };
         }
         currentIdex++;
-        const value = this.get(currentIdex);
+        const value = this.at(currentIdex);
         return { done: false, value };
       },
     };
@@ -191,7 +191,7 @@ describe("List", () => {
     const data = range(1, 34);
     const list = List.of(...data);
 
-    expect(list.get(11)).toEqual(12);
+    expect(list.at(11)).toEqual(12);
   });
 
   it("should be empty by default", () => {
@@ -201,26 +201,26 @@ describe("List", () => {
 
   it("should create a new list when update is called", () => {
     const list = List.of(1, 2, 3);
-    const list2 = list.set(1, 42);
-    expect(list2.get(1)).toBe(42);
-    expect(list.get(1)).toBe(2);
+    const list2 = list.with(1, 42);
+    expect(list2.at(1)).toBe(42);
+    expect(list.at(1)).toBe(2);
   });
   it("should update list on given indexes", () => {
     const list = List.of(...range(1, 34));
-    const list2 = list.set(32, 42);
-    expect(list2.get(32)).toBe(42);
+    const list2 = list.with(32, 42);
+    expect(list2.at(32)).toBe(42);
   });
 
   it("should increase list size when out of range indexes are used", () => {
     const list = List.of(1);
-    const list2 = list.set(12345, 42);
+    const list2 = list.with(12345, 42);
     expect(list2.length).toBe(12346);
   });
 
   it("should not get any value when out of range", () => {
     const data = range(1, 33);
     const list = List.of(...data);
-    expect(list.get(32)).toBeUndefined();
+    expect(list.at(32)).toBeUndefined();
   });
 
   it("should increase length when pushing a new value", () => {
@@ -234,8 +234,8 @@ describe("List", () => {
     const data = range(1, 33);
     const list = List.of(...data);
     const list2 = list.push(42);
-    expect(list.get(0)).toEqual(1);
-    expect(list2.get(32)).toEqual(42);
+    expect(list.at(0)).toEqual(1);
+    expect(list2.at(32)).toEqual(42);
   });
 
   /*
