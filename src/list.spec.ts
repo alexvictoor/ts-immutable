@@ -91,7 +91,7 @@ const buildHigherCapacityTrie = <T>(trie: Trie<T>): Trie<T> => {
 }
 
 export class List<T> {
-  private static EMPTY_LIST = new List<any>(new Leaf<any>([]), 0);
+  private static EMPTY_LIST = new List<any>(new Leaf<any>([]), 0, 0);
   public static empty = <T>(): List<T> => List.EMPTY_LIST;
 
   public static of = <T>(...input: Array<T>) => {
@@ -103,17 +103,20 @@ export class List<T> {
       offset += SIZE;
     }
     const trie = buildTrie(leafs);
-    return new List(trie, input.length);
+    return new List(trie, input.length, 0);
   };
 
   private capacity: number;
 
   private constructor(
     private readonly root: Trie<T>,
-    public readonly length: number
+    public readonly length: number,
+    private readonly origin: number
   ) {
     this.capacity = 1 << (this.root.level + SHIFT);
   }
+
+  private normalizeIndex = (index: number) => index + this.origin;
   //empty
   //of
   // push
@@ -128,19 +131,20 @@ export class List<T> {
     if (index >= this.length) {
       return undefined;
     }
-    return this.root.findValueAt(index);
+    return this.root.findValueAt(this.normalizeIndex(index));
   };
 
   push = (value: T) => {
+    const insertionIndex = this.normalizeIndex(this.length);
     if (this.length >= this.capacity) { 
       const newRoot = buildHigherCapacityTrie(this.root);
-      return new List<T>(newRoot.set(this.length, value), this.length + 1);
+      return new List<T>(newRoot.set(insertionIndex, value), this.length + 1, this.origin);
     }
-    return new List<T>(this.root.set(this.length, value), this.length + 1);
+    return new List<T>(this.root.set(insertionIndex, value), this.length + 1, this.origin);
   };
 
   pop = () => {
-    return new List<T>(this.root, Math.max(this.length - 1, 0));
+    return new List<T>(this.root, Math.max(this.length - 1, 0), this.origin);
   }
 
   with = (index: number, value: T): List<T> => {
@@ -149,8 +153,10 @@ export class List<T> {
       newRoot = buildHigherCapacityTrie(newRoot);
     }
     const newLength = index < this.length ? this.length : index + 1;
-    return new List<T>(newRoot.set(index, value), newLength);
+    return new List<T>(newRoot.set(this.normalizeIndex(index), value), newLength, this.origin);
   };
+
+  shift = () => new List<T>(this.root, this.length -1, this.origin + 1);
 
   [Symbol.iterator] = () => {
     let currentIdex = -1;
@@ -257,5 +263,30 @@ describe("List", () => {
     expect(list3.isEmpty()).toBe(true);
     expect(list3.pop().isEmpty()).toBe(true);
   });
+
+  it("should remove first value when calling shift", () => {
+    const list = List.empty();
+    const list2 = list.push(123);
+    const list3 = list2.shift();
+    expect(list3.isEmpty()).toBe(true);
+  });
+
+  it("should shift all indexes", () => {
+    const list = List.of(123, 42);
+    const list2 = list.shift().with(0, 36);
+    expect(list2.at(0)).toBe(36);
+  });
+
+  it("should take in account shifts to compute capacity when pushing new values", () => {
+    const data = range(1, 33);
+    const list = List.of(...data).shift();
+    const list2 = list.push(36).push(42);
+
+    expect(list2.at(0)).toEqual(2);
+    expect(list2.at(30)).toEqual(32);
+    expect(list2.at(32)).toEqual(42);
+  });
+
+
 
 });
