@@ -179,15 +179,13 @@ export class List<T> {
   }; 
 
   slice = (start: number = 0, end: number = this.length): List<T> => {
-    const startIndex = start < 0 ? (this.length + start) : start;
-    const endIndex = end < 0 ? (this.length + end) : end;
+    const startIndex = start < 0 ? Math.max(this.length + start, 0) : start;
+    const endIndex = end < 0 ? Math.max(this.length + end, 0) : end;
     let newLength = endIndex - startIndex; 
-    let newOrigin = this.origin; 
-    if (startIndex) {
-      newOrigin += startIndex;
-    }
+    let newOrigin = startIndex;
+   
 
-    if (newLength === this.length || newOrigin === this.origin) {
+    if (newLength === this.length && newOrigin === this.origin) {
       return this;
     }
 
