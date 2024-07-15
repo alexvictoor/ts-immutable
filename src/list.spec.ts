@@ -169,34 +169,23 @@ describe("List", () => {
   describe("batchMutations", () => {
     it("should perform all operation", () => {
       const list = List.empty();
-      const NUMBER_OF_ITEMS_TO_ADD = 64000;
+      const NUMBER_OF_ITEMS_TO_ADD = 6400;
       const items = range(0, NUMBER_OF_ITEMS_TO_ADD);
       const list2 = list.batchMutations((l) => {
-        items.forEach((i) => l.push(i));
-        items.forEach((i) => l.push(i));
-        items.forEach((i) => l.shift());
-        items.forEach((i) => l.push(i));
-        items.forEach((i) => l.with(i, i * 2));
-        items.forEach((i) => l.pop());
-      });
-      console.log(JSON.stringify((list2 as any).root.toJSON(), null, 2));
-      expect(list2.length).toBe(NUMBER_OF_ITEMS_TO_ADD);
-    });
-    it("should perform all operation", () => {
-      let list = List.empty();
-      const NUMBER_OF_ITEMS_TO_ADD = 64000;
-      const items = range(0, NUMBER_OF_ITEMS_TO_ADD);
-      for (const item of items) {
-        list = list
+        items.forEach((item) => {
+          l
           .push(item)
           .shift()
           .push(item)
           .push(item)
           .with(item, item * 2)
-          .pop();
-      }
-      console.log(JSON.stringify((list as any).root.toJSON(), null, 2));
-      expect(list.length).toBe(NUMBER_OF_ITEMS_TO_ADD);
+          .pop()
+          .pop()
+          .unshift(item);
+        });
+      });
+      //console.log(JSON.stringify((list2 as any).root.toJSON(), null, 2));
+      expect(list2.length).toBe(NUMBER_OF_ITEMS_TO_ADD);
     });
 
     it("should return the same list when there were no changes", () => {

@@ -29,11 +29,11 @@ class Node<T> {
 
   //swallowCopy =  () => new Node<T>(this.children.slice(), this.level);
 
-  set = (updateIndex: number, updateValue: T, mutationBatchId?: MutationBatchId) => {
+  set = (updateIndex: number, updateValue: T, mutationBatchId: MutationBatchId) => {
     const childrenIndex = this.computeChildrenIndex(updateIndex);
     const child = this.children[childrenIndex] || this.createNewEmptyChild(mutationBatchId);
     if (this.isInSameBatch(mutationBatchId)) {
-      this.children[childrenIndex] = child.set(updateIndex, updateValue);
+      this.children[childrenIndex] = child.set(updateIndex, updateValue, mutationBatchId);
       return this;
     }
     const newChildren = this.children.slice();
@@ -53,7 +53,7 @@ class Leaf<T> {
 
   private computeChildrenIndex = (index: number): number => index & MASK;
 
-  private isInSameBatch = (mutationBatchId?: MutationBatchId) => mutationBatchId && (mutationBatchId === this.mutationBatchId);
+  private isInSameBatch = (mutationBatchId: MutationBatchId) => mutationBatchId && (mutationBatchId === this.mutationBatchId);
 
 
   findValueAt = (index: number): T | undefined => {
@@ -61,7 +61,7 @@ class Leaf<T> {
     return this.children[childrenIndex];
   };
 
-  set = (updateIndex: number, updateValue: T, mutationBatchId?: MutationBatchId) => {
+  set = (updateIndex: number, updateValue: T, mutationBatchId: MutationBatchId) => {
     const childrenIndex = this.computeChildrenIndex(updateIndex);
     if (this.isInSameBatch(mutationBatchId)) {
       this.children[childrenIndex] = updateValue;
@@ -105,12 +105,12 @@ const buildHigherCapacityTrie = <T>(trie: Trie<T>, batchMutationId: MutationBatc
   return new Node<T>([trie], newLevel, batchMutationId);
 };
 
-const buildTrieWithMoreCapacityOnLeft = <T>(trie: Trie<T>): Trie<T> => {
+const buildTrieWithMoreCapacityOnLeft = <T>(trie: Trie<T>, batchMutationId: MutationBatchId): Trie<T> => {
   const newLevel = trie.level + SHIFT;
   if (isLeaf(trie)) {
-    return new Node<T>([undefined, trie], newLevel);
+    return new Node<T>([undefined, trie], newLevel, batchMutationId);
   }
-  return new Node<T>([undefined, trie], newLevel);
+  return new Node<T>([undefined, trie], newLevel, batchMutationId);
 };
 
 const buildMutationBatchId = () => new Object();
@@ -253,11 +253,11 @@ export class List<T> extends MutableList<T> {
 
   unshift = (value: T): List<T> => {
     if (this.origin === 0) {
-      const newRoot = buildTrieWithMoreCapacityOnLeft(this.root);
+      const newRoot = buildTrieWithMoreCapacityOnLeft(this.root, this.batchMutationId);
       const newOrigin = (1 << newRoot.level) - 1;
-      return new List<T>(newRoot, this.length + 1, newOrigin).with(0, value);
+      return this.createList(newRoot, this.length + 1, newOrigin).with(0, value);
     }
-    return new List<T>(this.root, this.length + 1, this.origin - 1).with(
+    return this.createList(this.root, this.length + 1, this.origin - 1).with(
       0,
       value
     );
