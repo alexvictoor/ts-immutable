@@ -2,18 +2,25 @@ const SIZE = 32;
 const SHIFT = 5; //Math.log2(SIZE);
 const MASK = SIZE - 1;
 
-class Node<T> {
+type MutationBatchId = unknown | undefined;
 
+class Node<T> {
   constructor(
     public children: Array<Node<T> | undefined> | Array<Leaf<T> | undefined>,
-    public level: number
+    public level: number,
+    private mutationBatchId?: MutationBatchId
   ) {}
 
   public computeCapacity = () => 1 << (this.level + SHIFT);
 
-  private computeChildrenIndex = (index: number): number =>  (index >> this.level) & MASK;
+  private computeChildrenIndex = (index: number): number =>
+    (index >> this.level) & MASK;
 
-  private createNewEmptyChild = (): Trie<T> => this.level > SHIFT ? new Node<T>([], this.level - SHIFT) : new Leaf<T>([]);
+  private createNewEmptyChild = (mutationBatchId: MutationBatchId): Trie<T> =>
+    this.level > SHIFT ? new Node<T>(new Array(SIZE), this.level - SHIFT, mutationBatchId) : new Leaf<T>(new Array(32));
+
+  private isInSameBatch = (mutationBatchId?: MutationBatchId) => mutationBatchId && (mutationBatchId === this.mutationBatchId);
+
 
   findValueAt = (index: number): T | undefined => {
     const childrenIndex = this.computeChildrenIndex(index);
@@ -22,13 +29,17 @@ class Node<T> {
 
   //swallowCopy =  () => new Node<T>(this.children.slice(), this.level);
 
-  set = (updateIndex: number, updateValue: T) => {
+  set = (updateIndex: number, updateValue: T, mutationBatchId?: MutationBatchId) => {
     const childrenIndex = this.computeChildrenIndex(updateIndex);
+    const child = this.children[childrenIndex] || this.createNewEmptyChild(mutationBatchId);
+    if (this.isInSameBatch(mutationBatchId)) {
+      this.children[childrenIndex] = child.set(updateIndex, updateValue);
+      return this;
+    }
     const newChildren = this.children.slice();
-    const child = newChildren[childrenIndex] || this.createNewEmptyChild();
-    newChildren[childrenIndex] = child.set(updateIndex, updateValue)
-    return new Node<T>(newChildren, this.level);
-  }
+    newChildren[childrenIndex] = child.set(updateIndex, updateValue, mutationBatchId);
+    return new Node<T>(newChildren, this.level, mutationBatchId);
+  };
 
   isLeaf = () => false;
   toJSON = () => this.children;
@@ -36,23 +47,30 @@ class Node<T> {
 
 class Leaf<T> {
   public readonly level = 0;
-  constructor(public children: Array<T | undefined>) {}
+  constructor(public children: Array<T | undefined>, private mutationBatchId?: MutationBatchId) {}
 
   public computeCapacity = () => SIZE;
 
   private computeChildrenIndex = (index: number): number => index & MASK;
+
+  private isInSameBatch = (mutationBatchId?: MutationBatchId) => mutationBatchId && (mutationBatchId === this.mutationBatchId);
+
 
   findValueAt = (index: number): T | undefined => {
     const childrenIndex = (index >> this.level) & MASK;
     return this.children[childrenIndex];
   };
 
-  set = (updateIndex: number, updateValue: T) => {
+  set = (updateIndex: number, updateValue: T, mutationBatchId?: MutationBatchId) => {
     const childrenIndex = this.computeChildrenIndex(updateIndex);
+    if (this.isInSameBatch(mutationBatchId)) {
+      this.children[childrenIndex] = updateValue;
+      return this;
+    }
     const newChildren = this.children.slice();
     newChildren[childrenIndex] = updateValue;
-    return new Leaf<T>(newChildren);
-  }
+    return new Leaf<T>(newChildren, mutationBatchId);
+  };
 
   isLeaf = () => true;
   toJSON = () => this.children;
@@ -61,7 +79,6 @@ class Leaf<T> {
 type Trie<T> = Node<T> | Leaf<T>;
 
 const isLeaf = <T>(trie: Trie<T>): trie is Leaf<T> => trie.isLeaf();
-
 
 const buildTrie = <T>(
   nodes: Array<Node<T>> | Array<Leaf<T>>,
@@ -80,13 +97,13 @@ const buildTrie = <T>(
   return buildTrie(parents, parentLevel);
 };
 
-const buildHigherCapacityTrie = <T>(trie: Trie<T>): Trie<T> => {
+const buildHigherCapacityTrie = <T>(trie: Trie<T>, batchMutationId: MutationBatchId): Trie<T> => {
   const newLevel = trie.level + SHIFT;
   if (isLeaf(trie)) {
-    return new Node<T>([trie], newLevel);
+    return new Node<T>([trie], newLevel, batchMutationId);
   }
-  return new Node<T>([trie], newLevel);
-}
+  return new Node<T>([trie], newLevel, batchMutationId);
+};
 
 const buildTrieWithMoreCapacityOnLeft = <T>(trie: Trie<T>): Trie<T> => {
   const newLevel = trie.level + SHIFT;
@@ -94,10 +111,40 @@ const buildTrieWithMoreCapacityOnLeft = <T>(trie: Trie<T>): Trie<T> => {
     return new Node<T>([undefined, trie], newLevel);
   }
   return new Node<T>([undefined, trie], newLevel);
+};
+
+const buildMutationBatchId = () => new Object();
+
+
+class MutableList<T> {
+
+  protected capacity: number;
+
+  protected constructor(
+    protected root: Trie<T>,
+    protected length: number,
+    protected origin: number,
+    protected batchMutationId: MutationBatchId
+  ) {
+    this.updateCapacity();
+  }
+  /*protected updateRoot = (root: Trie<T>) => this.root = root;
+  protected updateLength = (length: number) => this.length = length;
+  protected updateOrigin = (origin: number) => this.origin = origin;*/
+  protected updateState = (root: Trie<T>, length: number, origin: number) => {
+    this.root = root;
+    this.length = length;
+    this.origin = origin;
+    this.updateCapacity();
+  };
+
+  private updateCapacity = () => this.capacity = 1 << (this.root.level + SHIFT);
+
+  protected stopMutations = () => this.batchMutationId = undefined;
 }
 
-export class List<T> {
-  private static EMPTY_LIST = new List<any>(new Leaf<any>([]), 0, 0);
+export class List<T> extends MutableList<T> {
+  private static EMPTY_LIST = new List<any>(new Leaf<any>(new Array(32)), 0, 0);
   public static empty = <T>(): List<T> => List.EMPTY_LIST;
 
   public static of = <T>(...input: Array<T>) => {
@@ -112,24 +159,18 @@ export class List<T> {
     return new List(trie, input.length, 0);
   };
 
-  private capacity: number;
-
   private constructor(
-    private readonly root: Trie<T>,
+    protected readonly root: Trie<T>,
     public readonly length: number,
-    private readonly origin: number
+    protected readonly origin: number,
+    protected readonly batchMutationId: MutationBatchId = undefined
   ) {
+    super(root, length, origin, batchMutationId);
     this.capacity = 1 << (this.root.level + SHIFT);
   }
 
   private normalizeIndex = (index: number) => index + this.origin;
-  //empty
-  //of
-  // push
-  // pop
-  // set
-  // get
-  // spread
+
 
   isEmpty = () => this.length === 0;
 
@@ -140,34 +181,75 @@ export class List<T> {
     return this.root.findValueAt(this.normalizeIndex(index));
   };
 
+  private buildMutableCopy = (): List<T> => {
+    return new List(
+      this.root,
+      this.length,
+      this.origin,
+      buildMutationBatchId()
+    );
+  };
+
+  private isMutableCopy = (): boolean => !!this.batchMutationId;
+
+  private createList = (root: Trie<T>, length: number, origin: number) => {
+    if (this.isMutableCopy()) {
+      this.updateState(root, length, origin);
+      return this;
+    }
+    return new List<T>(root, length, origin);
+  };
+
+  batchMutations = (runMutations: (mutableCopy: List<T>) => void): List<T> => {
+    const copy = this.buildMutableCopy();
+    runMutations(copy);
+    if (this.equals(copy)) {
+      return this;
+    }
+    copy.stopMutations();
+    return copy;
+  };
+
   push = (value: T) => {
     const insertionIndex = this.normalizeIndex(this.length);
-    if (this.length >= this.capacity) { 
-      const newRoot = buildHigherCapacityTrie(this.root);
-      return new List<T>(newRoot.set(insertionIndex, value), this.length + 1, this.origin);
+    if (this.length >= this.capacity) {
+      const newRoot = buildHigherCapacityTrie(this.root, this.batchMutationId);
+      return this.createList(
+        newRoot.set(insertionIndex, value, this.batchMutationId),
+        this.length + 1,
+        this.origin
+      );
     }
-    return new List<T>(this.root.set(insertionIndex, value), this.length + 1, this.origin);
+    return this.createList(
+      this.root.set(insertionIndex, value, this.batchMutationId),
+      this.length + 1,
+      this.origin
+    );
   };
 
   pop = () => {
-    return new List<T>(this.root, Math.max(this.length - 1, 0), this.origin);
-  }
+    return this.createList(this.root, Math.max(this.length - 1, 0), this.origin);
+  };
 
   with = (index: number, value: T): List<T> => {
     let newRoot = this.root;
-    while (index >= newRoot.computeCapacity()) { 
-      newRoot = buildHigherCapacityTrie(newRoot);
+    while (index >= newRoot.computeCapacity()) {
+      newRoot = buildHigherCapacityTrie(newRoot, this.batchMutationId);
     }
     const newLength = index < this.length ? this.length : index + 1;
-    return new List<T>(newRoot.set(this.normalizeIndex(index), value), newLength, this.origin);
+    return this.createList(
+      newRoot.set(this.normalizeIndex(index), value, this.batchMutationId),
+      newLength,
+      this.origin
+    );
   };
 
   shift = () => {
     if (this.isEmpty()) {
       return this;
     }
-    return new List<T>(this.root, this.length - 1, this.origin + 1);
-  }
+    return this.createList(this.root, this.length - 1, this.origin + 1);
+  };
 
   unshift = (value: T): List<T> => {
     if (this.origin === 0) {
@@ -175,22 +257,24 @@ export class List<T> {
       const newOrigin = (1 << newRoot.level) - 1;
       return new List<T>(newRoot, this.length + 1, newOrigin).with(0, value);
     }
-    return new List<T>(this.root, this.length + 1, this.origin - 1).with(0, value);
-  }; 
+    return new List<T>(this.root, this.length + 1, this.origin - 1).with(
+      0,
+      value
+    );
+  };
 
   slice = (start: number = 0, end: number = this.length): List<T> => {
     const startIndex = start < 0 ? Math.max(this.length + start, 0) : start;
     const endIndex = end < 0 ? Math.max(this.length + end, 0) : end;
-    let newLength = endIndex - startIndex; 
+    let newLength = endIndex - startIndex;
     let newOrigin = startIndex;
-   
 
     if (newLength === this.length && newOrigin === this.origin) {
       return this;
     }
 
     return new List<T>(this.root, newLength, newOrigin);
-  }
+  };
 
   [Symbol.iterator] = () => {
     let currentIdex = -1;
@@ -206,4 +290,9 @@ export class List<T> {
       },
     };
   };
+
+  equals = (other: List<T>): boolean =>
+    this.root === other.root &&
+    this.length === other.length &&
+    this.origin === other.origin;
 }
