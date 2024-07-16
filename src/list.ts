@@ -128,9 +128,7 @@ class MutableList<T> {
   ) {
     this.updateCapacity();
   }
-  /*protected updateRoot = (root: Trie<T>) => this.root = root;
-  protected updateLength = (length: number) => this.length = length;
-  protected updateOrigin = (origin: number) => this.origin = origin;*/
+
   protected updateState = (root: Trie<T>, length: number, origin: number) => {
     this.root = root;
     this.length = length;
@@ -144,11 +142,10 @@ class MutableList<T> {
 }
 
 export class List<T> extends MutableList<T> {
-  private static EMPTY_LIST = new List<any>(new Leaf<any>(new Array(32)), 0, 0);
-  public static empty = <T>(): List<T> => List.EMPTY_LIST;
+  private static readonly EMPTY_LIST = new List<any>(new Leaf<any>(new Array(32)), 0, 0);
+  public static readonly empty = <T>(): List<T> => List.EMPTY_LIST;
 
   public static of = <T>(...input: Array<T>) => {
-    //const level = Math.floor(Math.log2(input.length));
     let offset = 0;
     const leafs = new Array<Leaf<T>>();
     while (offset < input.length) {
@@ -171,16 +168,6 @@ export class List<T> extends MutableList<T> {
 
   private normalizeIndex = (index: number) => index + this.origin;
 
-
-  isEmpty = () => this.length === 0;
-
-  at = (index: number) => {
-    if (index >= this.length) {
-      return undefined;
-    }
-    return this.root.findValueAt(this.normalizeIndex(index));
-  };
-
   private buildMutableCopy = (): List<T> => {
     return new List(
       this.root,
@@ -199,6 +186,25 @@ export class List<T> extends MutableList<T> {
     }
     return new List<T>(root, length, origin);
   };
+
+  private equals = (other: List<T>): boolean =>
+    this.root === other.root &&
+    this.length === other.length &&
+    this.origin === other.origin;
+
+
+  isEmpty = () => this.length === 0;
+
+  at = (index: number) => {
+    if (index >= this.length) {
+      return undefined;
+    }
+    return this.root.findValueAt(this.normalizeIndex(index));
+  };
+
+  
+
+  
 
   batchMutations = (runMutations: (mutableCopy: List<T>) => void): List<T> => {
     const copy = this.buildMutableCopy();
@@ -291,8 +297,5 @@ export class List<T> extends MutableList<T> {
     };
   };
 
-  equals = (other: List<T>): boolean =>
-    this.root === other.root &&
-    this.length === other.length &&
-    this.origin === other.origin;
+  
 }
