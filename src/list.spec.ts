@@ -120,6 +120,16 @@ describe("List", () => {
       const list2 = list.shift().shift().push(42);
       expect(list2.at(0)).toBe(42);
     });
+
+    it("should keep pushed values after a shift", () => {
+      const list = List.of(1);
+      const data = range(1, 33);
+      let list2 = list.shift().shift().push(42);
+      for (const i of data) {
+        list2 = list2.push(i);
+      }
+      expect(list2.at(31)).toBe(31);
+    });
   });
   describe("unshift", () => {
     it("should insert values when unshifting after shift", () => {

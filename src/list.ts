@@ -202,10 +202,6 @@ export class List<T> extends MutableList<T> {
     return this.root.findValueAt(this.normalizeIndex(index));
   };
 
-  
-
-  
-
   batchMutations = (runMutations: (mutableCopy: List<T>) => void): List<T> => {
     const copy = this.buildMutableCopy();
     runMutations(copy);
@@ -218,7 +214,7 @@ export class List<T> extends MutableList<T> {
 
   push = (value: T) => {
     const insertionIndex = this.normalizeIndex(this.length);
-    if (this.length >= this.capacity) {
+    if (insertionIndex >= this.capacity) {
       const newRoot = buildHigherCapacityTrie(this.root, this.batchMutationId);
       return this.createList(
         newRoot.set(insertionIndex, value, this.batchMutationId),
