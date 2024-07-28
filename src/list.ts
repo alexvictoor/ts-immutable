@@ -165,6 +165,9 @@ export class List<T> extends MutableList<T> {
   public static readonly empty = <T>(): List<T> => List.EMPTY_LIST;
 
   public static of = <T>(...input: Array<T>) => {
+    if (input.length === 0) {
+      return List.empty();
+    }
     let offset = 0;
     const leafs = new Array<Leaf<T>>();
     while (offset < input.length) {

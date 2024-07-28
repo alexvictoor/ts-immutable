@@ -10,6 +10,11 @@ describe("List", () => {
     expect([...list]).toEqual([1, 2, 3, undefined, 4, 5]);
   });
 
+  it("should create an empty list out of nothing", () => {
+    const list = List.of();
+    expect(list.isEmpty()).toBe(true);
+  });
+
   it("should be created from an array", () => {
     const data = range(1, 34);
     const list = List.of(...data);
