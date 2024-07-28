@@ -27,8 +27,6 @@ class Node<T> {
     return this.children[childrenIndex]?.findValueAt(index);
   };
 
-  //swallowCopy =  () => new Node<T>(this.children.slice(), this.level);
-
   set = (updateIndex: number, updateValue: T, mutationBatchId: MutationBatchId) => {
     const childrenIndex = this.computeChildrenIndex(updateIndex);
     const child = this.children[childrenIndex] || this.createNewEmptyChild(mutationBatchId);
@@ -38,6 +36,27 @@ class Node<T> {
     }
     const newChildren = this.children.slice();
     newChildren[childrenIndex] = child.set(updateIndex, updateValue, mutationBatchId);
+    return new Node<T>(newChildren, this.level, mutationBatchId);
+  };
+
+  insertLeaf = (index: number, leaf: Leaf<T>, mutationBatchId: MutationBatchId) => {
+    const childrenIndex = this.computeChildrenIndex(index);
+    if (this.level === SHIFT) {
+      if (this.isInSameBatch(mutationBatchId)) {
+        this.children[childrenIndex] = leaf;
+        return this;
+      } 
+      const newChildren = this.children.slice();
+      newChildren[childrenIndex] = leaf;
+      return new Node<T>(newChildren, this.level, mutationBatchId);
+    }
+    const child = (this.children[childrenIndex] || this.createNewEmptyChild(mutationBatchId)) as Node<T>;
+    if (this.isInSameBatch(mutationBatchId)) {
+      this.children[childrenIndex] = child.insertLeaf(index, leaf, mutationBatchId);
+      return this;
+    }
+    const newChildren = this.children.slice();
+    newChildren[childrenIndex] = child.insertLeaf(index, leaf, mutationBatchId);
     return new Node<T>(newChildren, this.level, mutationBatchId);
   };
 
@@ -160,10 +179,12 @@ export class List<T> extends MutableList<T> {
     protected readonly root: Trie<T>,
     public readonly length: number,
     protected readonly origin: number,
-    protected readonly batchMutationId: MutationBatchId = undefined
+    protected readonly batchMutationId: MutationBatchId = undefined,
+    protected readonly tail: Leaf<T> = new Leaf<any>([]), //TODO tail
   ) {
     super(root, length, origin, batchMutationId);
     this.capacity = 1 << (this.root.level + SHIFT);
+    // TODO tail
   }
 
   private normalizeIndex = (index: number) => index + this.origin;
