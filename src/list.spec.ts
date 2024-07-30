@@ -47,6 +47,64 @@ describe("List", () => {
     expect(list2.at(1)).toBe(42);
     expect(list.at(1)).toBe(2);
   });
+  it("should", () => {
+    const list = List.of(1, 2, 3).with(32, 42).with(64, 36);
+    expect(list.at(64)).toBe(36);
+  });
+  it("should increase its size when items are added at specific indexes", () => {
+    const items = range(0, 1024);
+    let list = List.empty<number>();
+    items.forEach((item) => {
+      list = list.with(item, item);
+    });
+    list; //?
+    items.forEach((item) => {
+      expect(list.at(item)).toBe(item);
+    });
+  });
+  it("should increase its size when items are pushed", () => {
+    const items = range(0, 1024);
+    let list = List.empty<number>();
+    items.forEach((item) => {
+      list = list.push(item);
+    });
+    list; //?
+    items.forEach((item) => {
+      expect(list.at(item)).toBe(item);
+    });
+  });
+  it("should", () => {
+    const items = range(0, 65);
+    let list = List.empty<number>();
+      items.forEach((item) => {
+        try {
+          list = list.push(item);
+        } catch(err) {
+          console.error(err);
+        }
+      });
+    list; //?
+    items.forEach((item) => {
+      expect(list.at(item)).toBe(item);
+    });
+  });
+  it("should increase its size when items are pushed during a batch", () => {
+    const items = range(0, 65);
+    let list = List.empty<number>();
+    const l2 = list.batchMutations((l) => {
+      items.forEach((item) => {
+        try {
+          l.push(item);
+        } catch(err) {
+          console.error(err);
+        }
+      });
+    });
+    l2; //?
+    items.forEach((item) => {
+      expect(l2.at(item)).toBe(item);
+    });
+  });
   it("should update list on given indexes", () => {
     const list = List.of(...range(1, 34));
     const list2 = list.with(32, 42);
@@ -55,8 +113,9 @@ describe("List", () => {
 
   it("should increase list size when out of range indexes are used", () => {
     const list = List.of(1);
-    const list2 = list.with(12345, 42);
-    expect(list2.length).toBe(12346);
+    const list2 = list.with(32, 42);
+    const list3 = list2.with(123456, 42);
+    expect(list3.length).toBe(123457);
   });
 
   it("should not get any value when out of range", () => {
@@ -70,6 +129,16 @@ describe("List", () => {
       const list2 = list.push(42);
       expect(list.length).toBe(3);
       expect(list2.length).toBe(4);
+    });
+    it("should", () => {
+      const items = range(0, 65);
+      let list = List.empty<number>();
+      items.forEach((item) => {
+        list = list.push(item);
+      });
+      items.forEach((item) => {
+        expect(list.at(item)).toBe(item);
+      });
     });
 
     it("should increase capacity when pushing a new value in an out of capacity list", () => {
@@ -94,6 +163,13 @@ describe("List", () => {
       const list3 = list2.pop();
       expect(list3.isEmpty()).toBe(true);
       expect(list3.pop().isEmpty()).toBe(true);
+    });
+    it("should remove value after pops", () => {
+      const data = range(0, 32);
+      const list = List.of(...data);
+      const list2 = list.push(123);
+      const list3 = list2.pop(); //?
+      expect(list3.at(31)).toBe(31);
     });
   });
 
@@ -188,15 +264,14 @@ describe("List", () => {
       const items = range(0, NUMBER_OF_ITEMS_TO_ADD);
       const list2 = list.batchMutations((l) => {
         items.forEach((item) => {
-          l
-          .push(item)
-          .shift()
-          .push(item)
-          .push(item)
-          .with(item, item * 2)
-          .pop()
-          .pop()
-          .unshift(item);
+          l.push(item)
+            .shift()
+            .push(item)
+            .push(item)
+            .with(item, item * 2)
+            .pop()
+            .pop()
+            .unshift(item);
         });
       });
       //console.log(JSON.stringify((list2 as any).root.toJSON(), null, 2));
