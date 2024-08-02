@@ -57,7 +57,6 @@ describe("List", () => {
     items.forEach((item) => {
       list = list.with(item, item);
     });
-    list; //?
     items.forEach((item) => {
       expect(list.at(item)).toBe(item);
     });
@@ -68,22 +67,16 @@ describe("List", () => {
     items.forEach((item) => {
       list = list.push(item);
     });
-    list; //?
     items.forEach((item) => {
       expect(list.at(item)).toBe(item);
     });
   });
-  it("should", () => {
+  it("should increase its size when items are pushed", () => {
     const items = range(0, 65);
     let list = List.empty<number>();
       items.forEach((item) => {
-        try {
-          list = list.push(item);
-        } catch(err) {
-          console.error(err);
-        }
+       list = list.push(item);
       });
-    list; //?
     items.forEach((item) => {
       expect(list.at(item)).toBe(item);
     });
@@ -93,14 +86,9 @@ describe("List", () => {
     let list = List.empty<number>();
     const l2 = list.batchMutations((l) => {
       items.forEach((item) => {
-        try {
-          l.push(item);
-        } catch(err) {
-          console.error(err);
-        }
+       l.push(item);
       });
     });
-    l2; //?
     items.forEach((item) => {
       expect(l2.at(item)).toBe(item);
     });
@@ -274,7 +262,6 @@ describe("List", () => {
             .unshift(item);
         });
       });
-      //console.log(JSON.stringify((list2 as any).root.toJSON(), null, 2));
       expect(list2.length).toBe(NUMBER_OF_ITEMS_TO_ADD);
     });
 
