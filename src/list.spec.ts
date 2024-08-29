@@ -159,6 +159,15 @@ describe("List", () => {
       const list3 = list2.pop(); //?
       expect(list3.at(31)).toBe(31);
     });
+
+    it("should cleanup when poping", () => {
+      const data = range(0, 64);
+      let list = List.of(...data);
+      data.forEach(() => list = list.pop());
+      list = list.with(65, 42);
+     
+      expect(list.at(33)).toBeUndefined();
+    });
   });
 
   describe("shift", () => {

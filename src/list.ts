@@ -350,17 +350,22 @@ export class List<T> extends MutableList<T> {
 
   pop = () => {
     const newLength = Math.max(this.length - 1, 0);
-    let newTail = this.tail;
 
-    if ((newLength & MASK) === 0) {
-      if (isLeaf(this.root)) {
-        newTail = this.root;
-      } else {
-        newTail = this.root.getLeaf(Math.max(newLength - 1, 0));
+    return this.batchMutations((that) => {
+      that.with(newLength, undefined as any);
+      let newTail = that.tail;
+      let newRoot = that.root;
+
+      if ((newLength & MASK) === 0) {
+        if (isLeaf(that.root)) {
+          newTail = that.root;
+        } else {
+          newRoot = that.root.insertLeaf(newLength, newTail, that.batchMutationId);
+          newTail = newRoot.getLeaf(Math.max(newLength - 1, 0));
+        }
       }
-    }
-
-    return this.createList(this.root, newTail, newLength, this.origin);
+      that.createList(newRoot, newTail, newLength, that.origin);
+    });
   };
 
   with = (index: number, value: T): List<T> => {
@@ -413,14 +418,9 @@ export class List<T> extends MutableList<T> {
     if (this.isEmpty()) {
       return this;
     }
-    return this.batchMutations(that => {
+    return this.batchMutations((that) => {
       that.with(0, undefined as any);
-      that.createList(
-        that.root,
-        that.tail,
-        that.length - 1,
-        that.origin + 1
-      );
+      that.createList(that.root, that.tail, that.length - 1, that.origin + 1);
     });
   };
 
