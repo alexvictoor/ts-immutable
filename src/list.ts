@@ -231,7 +231,7 @@ export class List<T> extends MutableList<T> {
   );
   public static readonly empty = <T>(): List<T> => List.EMPTY_LIST;
 
-  public static of = <T>(...input: Array<T>) => {
+  public static of = <T>(...input: Array<T>): List<T> => {
     if (input.length === 0) {
       return List.empty();
     }
@@ -259,6 +259,9 @@ export class List<T> extends MutableList<T> {
   private normalizeIndex = (index: number) => index + this.origin;
 
   private buildMutableCopy = (): List<T> => {
+    if (this.isMutableCopy()) {
+      return this;
+    }
     return new List(
       this.root,
       this.tail,
@@ -365,7 +368,6 @@ export class List<T> extends MutableList<T> {
     let newTail = this.tail;
 
     const oldTailOffset = getTailOffset(this.length + this.origin);
-
     // need at least one more layer
     if (index >= this.capacity) {
       newRoot = buildHigherCapacityTrie(
@@ -383,7 +385,7 @@ export class List<T> extends MutableList<T> {
     const treeIndex = this.normalizeIndex(index);
     const newTailOffset = getTailOffset(newLength + this.origin);
 
-    // tail need to change
+    // tail needs to change
     if (newTailOffset > oldTailOffset && oldTailOffset !== 0) {
       newRoot = (newRoot as Node<T>).insertLeaf(
         oldTailOffset,
@@ -411,12 +413,15 @@ export class List<T> extends MutableList<T> {
     if (this.isEmpty()) {
       return this;
     }
-    return this.createList(
-      this.root,
-      this.tail,
-      this.length - 1,
-      this.origin + 1
-    );
+    return this.batchMutations(that => {
+      that.with(0, undefined as any);
+      that.createList(
+        that.root,
+        that.tail,
+        that.length - 1,
+        that.origin + 1
+      );
+    });
   };
 
   unshift = (value: T): List<T> => {

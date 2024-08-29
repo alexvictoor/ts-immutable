@@ -190,7 +190,7 @@ describe("List", () => {
       expect(list2.at(0)).toBe(42);
     });
 
-    it("should keep pushed values after a shift", () => {
+    it("should keep pushed values when shifting", () => {
       const list = List.of(1);
       const data = range(1, 33);
       let list2 = list.shift().shift().push(42);
@@ -198,6 +198,14 @@ describe("List", () => {
         list2 = list2.push(i);
       }
       expect(list2.at(31)).toBe(31);
+    });
+    it("should cleanup when shifting", () => {
+      const data = range(0, 32);
+      let list = List.of(...data);
+      data.forEach(() => list = list.shift());
+      list = list.with(31, 42);
+      expect(list.at(31)).toEqual(42);
+      expect(list.at(30)).toBeUndefined();
     });
   });
   describe("unshift", () => {
