@@ -279,7 +279,6 @@ export class List<T> extends MutableList<T> {
     length: number,
     origin: number
   ): List<T> => {
-    
     // avoid to keep a reference to a useless leaf root
     if (isLeaf(root) && root !== tail) {
       return this.createList(tail, tail, length, origin);
@@ -366,7 +365,11 @@ export class List<T> extends MutableList<T> {
         if (isLeaf(that.root)) {
           newTail = that.root;
         } else {
-          newRoot = that.root.insertLeaf(newLength, newTail, that.batchMutationId);
+          newRoot = that.root.insertLeaf(
+            newLength,
+            newTail,
+            that.batchMutationId
+          );
           newTail = newRoot.getLeaf(Math.max(newLength - 1, 0));
         }
       }
@@ -439,20 +442,17 @@ export class List<T> extends MutableList<T> {
         this.batchMutationId
       );
       const newOrigin = (1 << newRoot.level) - 1;
-      return this.batchMutations((that) => that.createList(
-        newRoot,
-        this.tail,
-        this.length + 1,
-        newOrigin
-      ).with(0, value));
+      return this.batchMutations((that) =>
+        that
+          .createList(newRoot, this.tail, this.length + 1, newOrigin)
+          .with(0, value)
+      );
     }
-    return this.batchMutations((that) => 
-      that.createList(
-        this.root,
-        this.tail,
-        this.length + 1,
-        this.origin - 1
-      ).with(0, value));
+    return this.batchMutations((that) =>
+      that
+        .createList(this.root, this.tail, this.length + 1, this.origin - 1)
+        .with(0, value)
+    );
   };
 
   slice = (start: number = 0, end: number = this.length): List<T> => {
