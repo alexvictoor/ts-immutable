@@ -31,7 +31,7 @@ class Node<T> {
 
   set = (
     updateIndex: number,
-    updateValue: T,
+    updateValue: T | undefined,
     mutationBatchId: MutationBatchId
   ) => {
     const childrenIndex = this.computeChildrenIndex(updateIndex);
@@ -122,7 +122,7 @@ class Leaf<T> {
 
   set = (
     updateIndex: number,
-    updateValue: T,
+    updateValue: T | undefined,
     mutationBatchId: MutationBatchId
   ) => {
     const childrenIndex = this.computeChildrenIndex(updateIndex);
@@ -358,7 +358,7 @@ export class List<T> extends MutableList<T> {
     const newLength = Math.max(this.length - 1, 0);
 
     return this.batchMutations((that) => {
-      that.with(newLength, undefined as any);
+      that.set(newLength, undefined);
       let newTail = that.tail;
       let newRoot = that.root;
 
@@ -374,7 +374,7 @@ export class List<T> extends MutableList<T> {
     });
   };
 
-  with = (index: number, value: T): List<T> => {
+  private set = (index: number, value: T | undefined): List<T> => {
     let newRoot = this.root;
     let newTail = this.tail;
 
@@ -420,12 +420,14 @@ export class List<T> extends MutableList<T> {
     return this.createList(newRoot, newTail, newLength, this.origin);
   };
 
+  with = (index: number, value: T): List<T> => this.set(index, value);
+
   shift = () => {
     if (this.isEmpty()) {
       return this;
     }
     return this.batchMutations((that) => {
-      that.with(0, undefined as any);
+      that.set(0, undefined);
       that.createList(that.root, that.tail, that.length - 1, that.origin + 1);
     });
   };
