@@ -156,7 +156,7 @@ describe("List", () => {
       const data = range(0, 32);
       const list = List.of(...data);
       const list2 = list.push(123);
-      const list3 = list2.pop(); //?
+      const list3 = list2.pop();
       expect(list3.at(31)).toBe(31);
     });
 
