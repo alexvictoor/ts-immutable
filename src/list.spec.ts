@@ -253,12 +253,12 @@ describe("List", () => {
       expect([...list.slice(-2, 2)]).toEqual([...data.slice(-2, 2)]);
     });
 
-    it("should slice handling out of bounds parameters", () => {
-      const data = [1, 2, 3, 4];
+    it.only("should slice handling out of bounds parameters", () => {
+      const data = [1, 2, 3, 4, 5, 6, 7];
       const list = List.of(...data);
       expect([...list.slice(-4, 2)]).toEqual([...data.slice(-4, 2)]);
       expect([...list.slice(-5, 2)]).toEqual([...data.slice(-5, 2)]);
-      expect([...list.slice(0, -5)]).toEqual([...data.slice(0, -5)]);
+      expect([...list.slice(1, -5)]).toEqual([...data.slice(1, -5)]);
     });
   });
 

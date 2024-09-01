@@ -473,7 +473,7 @@ export class List<T> extends MutableList<T> {
 
     return {
       next: () => {
-        if (currentIdex === this.length - 1) {
+        if (currentIdex >= this.length - 1) {
           return { done: true, value: undefined };
         }
         currentIdex++;
