@@ -253,12 +253,26 @@ describe("List", () => {
       expect([...list.slice(-2, 2)]).toEqual([...data.slice(-2, 2)]);
     });
 
-    it.only("should slice handling out of bounds parameters", () => {
+    it("should slice handling out of bounds parameters", () => {
       const data = [1, 2, 3, 4, 5, 6, 7];
       const list = List.of(...data);
       expect([...list.slice(-4, 2)]).toEqual([...data.slice(-4, 2)]);
       expect([...list.slice(-5, 2)]).toEqual([...data.slice(-5, 2)]);
       expect([...list.slice(1, -5)]).toEqual([...data.slice(1, -5)]);
+    });
+
+    it("should cleanup unused values when slicing", () => {
+      const data = [1, 2, 3, 4, 5, 6, 7];
+      const list = List.of(...data);
+      const list2 = list.slice(2, 3).with(2, 42);
+      expect(list2.at(1)).toBeUndefined();
+    });
+    it("should cleanup unused values when slicing a big list", () => {
+      const data = range(1, 2000);
+      const list = List.of(...data);
+      const list2 = list.slice(2, 3).with(2, 42);
+      expect(list2.at(0)).toBe(3);
+      expect(list2.at(1)).toBeUndefined();
     });
   });
 
