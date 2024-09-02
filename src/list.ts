@@ -13,7 +13,7 @@ class Node<T> {
 
   public computeCapacity = () => 1 << (this.level + SHIFT);
 
-  private computeChildrenIndex = (index: number): number =>
+  private computeChildIndex = (index: number): number =>
     (index >> this.level) & MASK;
 
   private createNewEmptyChild = (mutationBatchId: MutationBatchId): Trie<T> =>
@@ -25,7 +25,7 @@ class Node<T> {
     mutationBatchId && mutationBatchId === this.mutationBatchId;
 
   findValueAt = (index: number): T | undefined => {
-    const childrenIndex = this.computeChildrenIndex(index);
+    const childrenIndex = this.computeChildIndex(index);
     return this.children[childrenIndex]?.findValueAt(index);
   };
 
@@ -34,7 +34,7 @@ class Node<T> {
     updateValue: T | undefined,
     mutationBatchId: MutationBatchId
   ) => {
-    const childrenIndex = this.computeChildrenIndex(updateIndex);
+    const childrenIndex = this.computeChildIndex(updateIndex);
     const child =
       this.children[childrenIndex] || this.createNewEmptyChild(mutationBatchId);
     if (this.isInSameBatch(mutationBatchId)) {
@@ -59,20 +59,20 @@ class Node<T> {
     leaf: Leaf<T>,
     mutationBatchId: MutationBatchId
   ) => {
-    const childrenIndex = this.computeChildrenIndex(index);
+    const childIndex = this.computeChildIndex(index);
     if (this.level === SHIFT) {
       if (this.isInSameBatch(mutationBatchId)) {
-        this.children[childrenIndex] = leaf;
+        this.children[childIndex] = leaf;
         return this;
       }
       const newChildren = this.children.slice();
-      newChildren[childrenIndex] = leaf;
+      newChildren[childIndex] = leaf;
       return new Node<T>(newChildren, this.level, mutationBatchId);
     }
-    const child = (this.children[childrenIndex] ||
+    const child = (this.children[childIndex] ||
       this.createNewEmptyChild(mutationBatchId)) as Node<T>;
     if (this.isInSameBatch(mutationBatchId)) {
-      this.children[childrenIndex] = child.insertLeaf(
+      this.children[childIndex] = child.insertLeaf(
         index,
         leaf,
         mutationBatchId
@@ -80,12 +80,12 @@ class Node<T> {
       return this;
     }
     const newChildren = this.children.slice();
-    newChildren[childrenIndex] = child.insertLeaf(index, leaf, mutationBatchId);
+    newChildren[childIndex] = child.insertLeaf(index, leaf, mutationBatchId);
     return new Node<T>(newChildren, this.level, mutationBatchId);
   };
 
   getLeaf = (index: number) => {
-    const childrenIndex = this.computeChildrenIndex(index);
+    const childrenIndex = this.computeChildIndex(index);
     const child = this.children[childrenIndex];
 
     if (!child) {
@@ -99,16 +99,16 @@ class Node<T> {
 
   removeAfter = (index: number,  mutationBatchId: MutationBatchId
   ) => {
-    const childrenIndex = this.computeChildrenIndex(index);
-    const child = this.children[childrenIndex];
+    const childIndex = this.computeChildIndex(index);
+    const child = this.children[childIndex];
     const cleanChild = child ? child.removeAfter(index, mutationBatchId) : undefined;
 
     if (this.isInSameBatch(mutationBatchId)) {
-      this.children.splice(childrenIndex, SIZE - childrenIndex);
-      this.children[childrenIndex] = cleanChild;
+      this.children.splice(childIndex, SIZE - childIndex);
+      this.children[childIndex] = cleanChild;
       return this;
     }
-    let newChildren = this.children.slice(0, childrenIndex);
+    let newChildren = this.children.slice(0, childIndex);
     if (cleanChild) {
       newChildren.push(cleanChild as any);
     }
@@ -128,7 +128,7 @@ class Leaf<T> {
 
   public computeCapacity = () => SIZE;
 
-  private computeChildrenIndex = (index: number): number => index & MASK;
+  private computeChildIndex = (index: number): number => index & MASK;
 
   private isInSameBatch = (mutationBatchId: MutationBatchId) =>
     mutationBatchId && mutationBatchId === this.mutationBatchId;
@@ -143,25 +143,26 @@ class Leaf<T> {
     updateValue: T | undefined,
     mutationBatchId: MutationBatchId
   ) => {
-    const childrenIndex = this.computeChildrenIndex(updateIndex);
+    const childIndex = this.computeChildIndex(updateIndex);
     if (this.isInSameBatch(mutationBatchId)) {
-      this.children[childrenIndex] = updateValue;
+      this.children[childIndex] = updateValue;
       return this;
     }
     const newChildren = this.children.slice();
-    newChildren[childrenIndex] = updateValue;
+    newChildren[childIndex] = updateValue;
     return new Leaf<T>(newChildren, mutationBatchId);
   };
 
   removeAfter = (index: number,  mutationBatchId: MutationBatchId
   ) => {
-    const childrenIndex = this.computeChildrenIndex(index);
-    const newChildren = this.children.slice(0, childrenIndex);
-
+    const childIndex = this.computeChildIndex(index);
+    
     if (this.isInSameBatch(mutationBatchId)) {
-      this.children = newChildren;
+      this.children.splice(childIndex, SIZE - childIndex);
       return this;
     }
+    
+    const newChildren = this.children.slice(0, childIndex);
     return new Leaf<T>(newChildren, mutationBatchId);
   };
 
@@ -500,12 +501,12 @@ export class List<T> extends MutableList<T> {
 
     if (oldTailOffset === newTailOffset || isLeaf(this.root)) {
       const newTail = this.tail.removeAfter(newOrigin + newLength, this.batchMutationId);
-      return new List<T>(this.root, newTail, newLength, newOrigin);
+      return this.createList(this.root, newTail, newLength, newOrigin);
     }
 
     const newRoot = this.root.removeAfter(newOrigin + newLength, this.batchMutationId);
     const newTail = newRoot.getLeaf(newTailOffset);
-    return new List<T>(newRoot, newTail, newLength, newOrigin);
+    return this.createList(newRoot, newTail, newLength, newOrigin);
   };
 
   [Symbol.iterator] = () => {

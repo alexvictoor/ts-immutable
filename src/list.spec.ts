@@ -274,6 +274,13 @@ describe("List", () => {
       expect(list2.at(0)).toBe(3);
       expect(list2.at(1)).toBeUndefined();
     });
+    it("should cleanup unused values when slicing a big list in a transaction", () => {
+      const data = range(0, 2000);
+      const list = List.of(...data);
+      const list2 = list.batchMutations(l => l.slice(0, 1999).slice(500, 1000).slice(0, 2).slice(0, 1).with(2, 42));
+      expect(list2.at(0)).toBe(500);
+      expect(list2.at(1)).toBeUndefined();
+    });
   });
 
   describe("batchMutations", () => {
