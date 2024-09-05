@@ -259,6 +259,7 @@ describe("List", () => {
       expect([...list.slice(-4, 2)]).toEqual([...data.slice(-4, 2)]);
       expect([...list.slice(-5, 2)]).toEqual([...data.slice(-5, 2)]);
       expect([...list.slice(1, -5)]).toEqual([...data.slice(1, -5)]);
+      expect([...list.slice(1, 4)]).toEqual([...data.slice(1, 4)]);
     });
 
     it("should cleanup unused values when slicing", () => {

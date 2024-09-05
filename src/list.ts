@@ -2,6 +2,8 @@ const SIZE = 32;
 const SHIFT = 5; //Math.log2(SIZE);
 const MASK = SIZE - 1;
 
+const emptyArray = (length: number) => Array.from({ length }, () => undefined);
+
 type MutationBatchId = unknown | undefined;
 
 class Node<T> {
@@ -115,6 +117,24 @@ class Node<T> {
     return new Node<T>(newChildren, this.level, mutationBatchId);
   };
 
+  removeBefore = (index: number,  mutationBatchId: MutationBatchId
+  ) => {
+    const childIndex = this.computeChildIndex(index);
+    const child = this.children[childIndex];
+    const cleanChild = child ? child.removeBefore(index, mutationBatchId) : undefined;
+
+    if (this.isInSameBatch(mutationBatchId)) {
+      this.children.splice(0, childIndex, ...emptyArray(childIndex));
+      this.children[childIndex] = cleanChild;
+      return this;
+    }
+    let newChildren = this.children.slice().splice(0, childIndex, ...emptyArray(childIndex));
+    if (cleanChild) {
+      newChildren.push(cleanChild as any);
+    }
+    return new Node<T>(newChildren, this.level, mutationBatchId);
+  };
+
   isLeaf = () => false;
   toJSON = () => this.children;
 }
@@ -163,6 +183,19 @@ class Leaf<T> {
     }
     
     const newChildren = this.children.slice(0, childIndex);
+    return new Leaf<T>(newChildren, mutationBatchId);
+  };
+
+  removeBefore = (index: number,  mutationBatchId: MutationBatchId
+  ) => {
+    const childIndex = this.computeChildIndex(index);
+    
+    if (this.isInSameBatch(mutationBatchId)) {
+      this.children.splice(0, childIndex, ...emptyArray(childIndex));
+      return this;
+    }
+    const newChildren = this.children.slice();
+    newChildren.splice(0, childIndex,  ...emptyArray(childIndex));
     return new Leaf<T>(newChildren, mutationBatchId);
   };
 
@@ -499,14 +532,16 @@ export class List<T> extends MutableList<T> {
     const oldTailOffset = getTailOffset(this.length + this.origin);
     const newTailOffset = getTailOffset(newLength + newOrigin);
 
-    if (oldTailOffset === newTailOffset || isLeaf(this.root)) {
-      const newTail = this.tail.removeAfter(newOrigin + newLength, this.batchMutationId);
-      return this.createList(this.root, newTail, newLength, newOrigin);
-    }
-
-    const newRoot = this.root.removeAfter(newOrigin + newLength, this.batchMutationId);
-    const newTail = newRoot.getLeaf(newTailOffset);
-    return this.createList(newRoot, newTail, newLength, newOrigin);
+    return this.batchMutations((that) => {
+      if (oldTailOffset === newTailOffset || isLeaf(that.root)) {
+        const newTail = that.tail.removeAfter(newOrigin + newLength, that.batchMutationId).removeBefore(newOrigin, that.batchMutationId);
+        return that.createList(that.root, newTail, newLength, newOrigin);
+      }
+  
+      const newRoot = that.root.removeAfter(newOrigin + newLength, that.batchMutationId).removeBefore(newOrigin, that.batchMutationId);
+      const newTail = newRoot.getLeaf(newTailOffset);
+      return that.createList(newRoot, newTail, newLength, newOrigin);
+    });
   };
 
   [Symbol.iterator] = () => {
