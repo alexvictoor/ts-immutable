@@ -508,13 +508,13 @@ export class List<T> extends MutableList<T> {
       const newOrigin = (1 << newRoot.level) - 1;
       return this.batchMutations((that) =>
         that
-          .createList(newRoot, this.tail, this.length + 1, newOrigin)
+          .createList(newRoot, that.tail, that.length + 1, newOrigin)
           .with(0, value)
       );
     }
     return this.batchMutations((that) =>
       that
-        .createList(this.root, this.tail, this.length + 1, this.origin - 1)
+        .createList(that.root, that.tail, that.length + 1, that.origin - 1)
         .with(0, value)
     );
   };
