@@ -383,7 +383,7 @@ export class List<T> extends MutableList<T> {
     return copy;
   };
 
-  push = (value: T) => {
+  private pushASingleValue = (value: T) => {
     const insertionIndex = this.normalizeIndex(this.length);
     const tailOffset = getTailOffset(this.length + this.origin);
 
@@ -416,6 +416,8 @@ export class List<T> extends MutableList<T> {
       this.origin
     );
   };
+
+  push = (...values: Array<T>) => this.batchMutations(that => values.forEach(that.pushASingleValue))
 
   pop = () => {
     const newLength = Math.max(this.length - 1, 0);

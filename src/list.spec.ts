@@ -139,9 +139,12 @@ describe("List", () => {
 
     it("should not be empty when an item has been added", () => {
       const list = List.empty();
-      const list2 = list.push(123);
+      const list2 = list.push(123, 46);
       expect(list.isEmpty()).toBe(true);
       expect(list2.isEmpty()).not.toBe(true);
+      expect(list2.length).toBe(2);
+      expect(list2.at(0)).toBe(123);
+      expect(list2.at(1)).toBe(46);
     });
   });
   describe("pop", () => {
