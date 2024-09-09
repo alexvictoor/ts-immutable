@@ -4,6 +4,14 @@ const MASK = SIZE - 1;
 
 const emptyArray = (length: number) => Array.from({ length }, () => undefined);
 
+const isIterable = <T>(obj: unknown): obj is Iterable<T> => {
+  // checks for null and undefined
+  if (obj == null) {
+    return false;
+  }
+  return typeof obj[Symbol.iterator] === 'function';
+}
+
 type MutationBatchId = unknown | undefined;
 
 class Node<T> {
@@ -286,7 +294,7 @@ const getTailOffset = (size) => {
 
 const EMPTY_LEAF = new Leaf<any>(new Array(32));
 
-export class List<T> extends MutableList<T> {
+export class List<T> extends MutableList<T> implements Iterable<T> {
   private static readonly EMPTY_LIST = new List<any>(
     EMPTY_LEAF,
     EMPTY_LEAF,
@@ -546,17 +554,21 @@ export class List<T> extends MutableList<T> {
     });
   };
 
+  concat = (...params: Array<Iterable<T> | T>): List<T> => {
+    return this.batchMutations(that => params.forEach(param => isIterable(param) ? that.push(...param) : that.push(param)));
+  }
+
   [Symbol.iterator] = () => {
     let currentIdex = -1;
 
     return {
       next: () => {
         if (currentIdex >= this.length - 1) {
-          return { done: true, value: undefined };
+          return { done: true, value: undefined } as IteratorResult<T>;
         }
         currentIdex++;
         const value = this.at(currentIdex);
-        return { done: false, value };
+        return { done: false, value } as IteratorResult<T>;
       },
     };
   };

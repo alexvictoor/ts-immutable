@@ -286,6 +286,21 @@ describe("List", () => {
     });
   });
 
+  describe("concat", () => {
+    it("should concat another list", () => {
+      const data = range(0, 100);
+      const list = List.of(...data);
+      const list2 = List.of(...data);
+      expect(list.concat(list2, data).length).toBe(300);
+    });
+    it("should concat another list and a value", () => {
+      const data = range(0, 100);
+      const list = List.of(...data);
+      const list2 = List.of(...data);
+      expect(list.concat(list2, 42).length).toBe(201);
+    });
+  });
+
   describe("batchMutations", () => {
     it("should perform all operation", () => {
       const list = List.empty();
