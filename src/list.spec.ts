@@ -118,14 +118,13 @@ describe("List", () => {
       expect(list.length).toBe(3);
       expect(list2.length).toBe(4);
     });
-    it("should", () => {
+    
+    it("should push behond capacity", () => {
       const items = range(0, 65);
       let list = List.empty<number>();
+      const list2 = list.push(...items);
       items.forEach((item) => {
-        list = list.push(item);
-      });
-      items.forEach((item) => {
-        expect(list.at(item)).toBe(item);
+        expect(list2.at(item)).toBe(item);
       });
     });
 
