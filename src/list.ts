@@ -343,6 +343,18 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     );
   };
 
+  private buildImmutableCopy = (): List<T> => {
+    if (!this.isMutableCopy()) {
+      return this;
+    }
+    return new List(
+      this.root,
+      this.tail,
+      this.length,
+      this.origin,
+    );
+  };
+
   private isMutableCopy = (): boolean => !!this.batchMutationId;
 
   private createList = (
@@ -555,8 +567,20 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
   };
 
   concat = (...params: Array<Iterable<T> | T>): List<T> => {
-    return this.batchMutations(that => params.forEach(param => isIterable(param) ? that.push(...param) : that.push(param)));
+    const result = this.batchMutations(that => params.forEach(param => isIterable(param) ? that.push(...param) : that.push(param)));
+    return result;
   }
+
+  insert = (index: number, value: T): List<T> => {
+    const normalizedIndex = Math.max(0, Math.min(index, this.length)); 
+    if (!this.isMutableCopy()) {
+      return this.slice(0, normalizedIndex).concat(value, this.slice(normalizedIndex));
+    } 
+    const safeCopy = this.buildImmutableCopy();
+    const result = safeCopy.slice(0, normalizedIndex).concat(value, safeCopy.slice(normalizedIndex));
+    this.updateState(result.root, result.tail, result.length, result.origin);
+    return this;
+  } 
 
   [Symbol.iterator] = () => {
     let currentIdex = -1;

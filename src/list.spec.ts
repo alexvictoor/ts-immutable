@@ -300,6 +300,26 @@ describe("List", () => {
       expect(list.concat(list2, 42).length).toBe(201);
     });
   });
+  describe("insert", () => {
+    it("should insert into a list", () => {
+      const list = List.of(0, 1, 2);
+      expect(list.insert(1, 42).length).toBe(4);
+    });
+    it("should insert into a list within a mutation batch", () => {
+      const list = List.of(0, 1, 2);
+      expect(list.batchMutations(that => that.insert(1, 42)).length).toBe(4);
+    });
+    it("should insert at the very end with out of range index", () => {
+      const list = List.of(0, 1, 2);
+      expect(list.batchMutations(that => that.insert(100, 42)).length).toBe(4);
+      expect(list.insert(100, 42).length).toBe(4);
+    });
+    it("should insert at the beginning with negative index", () => {
+      const list = List.of(0, 1, 2);
+      expect(list.batchMutations(that => that.insert(-1, 42)).at(0)).toBe(42);
+      expect(list.insert(-1, 42).at(0)).toBe(42);
+    });
+  });
 
   describe("batchMutations", () => {
     it("should perform all operation", () => {
