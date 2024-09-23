@@ -321,6 +321,39 @@ describe("List", () => {
     });
   });
 
+  describe("splice", () => {
+
+    it('should remove all element starting at a given index', () => {
+      const list = List.of(1, 2, 3, 4);
+      expect(list.splice(1)).toHaveLength(1);
+    });
+
+    it('should do nothing if delete count is zero', () => {
+      const list = List.of(1, 2, 3, 4);
+      expect(list.splice(1, 0)).toBe(list);
+      //expect(list.splice(1, undefined)).toBe(list);
+    });
+
+    it('should remove a given number of elements starting at a given index', () => {
+      const list = List.of(1, 2, 3, 4);
+      expect(list.splice(1, 1)).toHaveLength(3);
+    });
+    it('should remove a given number of elements starting at a given index and add items', () => {
+      const list = List.of(1, 2, 3, 4);
+      expect(list.splice(1, 0, 42)).toHaveLength(5);
+    });
+
+    it('should remove all element starting at a given index within a mutation batch', () => {
+      const list = List.of(1, 2, 3, 4);
+      const list2 = list.batchMutations(that => {
+        that.splice(1, 1)
+      });
+      expect(list2).toHaveLength(3);
+    });
+
+   
+  });
+
   describe("batchMutations", () => {
     it("should perform all operation", () => {
       const list = List.empty();
