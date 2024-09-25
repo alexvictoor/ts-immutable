@@ -541,10 +541,12 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     );
   };
 
+  private correctOutOfRangeIndex = (index: number) => index < 0 ? Math.max(this.length + index, 0) : Math.min(this.length, index);
+
   slice = (start: number = 0, end: number = this.length): List<T> => {
-    const startIndex = start < 0 ? Math.max(this.length + start, 0) : start;
-    const endIndex = end < 0 ? Math.max(this.length + end, 0) : end;
-    let newLength = endIndex - startIndex;
+    const startIndex = this.correctOutOfRangeIndex(start);
+    const endIndex = this.correctOutOfRangeIndex(end);
+    let newLength = Math.max(0, endIndex - startIndex);
     let newOrigin = startIndex + this.origin;
 
     if (newLength === this.length) {

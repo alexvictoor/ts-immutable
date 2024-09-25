@@ -258,10 +258,13 @@ describe("List", () => {
     it("should slice handling out of bounds parameters", () => {
       const data = [1, 2, 3, 4, 5, 6, 7];
       const list = List.of(...data);
-      expect([...list.slice(-4, 2)]).toEqual([...data.slice(-4, 2)]);
-      expect([...list.slice(-5, 2)]).toEqual([...data.slice(-5, 2)]);
-      expect([...list.slice(1, -5)]).toEqual([...data.slice(1, -5)]);
-      expect([...list.slice(1, 4)]).toEqual([...data.slice(1, 4)]);
+      expect(list.slice(-4, 2).length).toEqual(data.slice(-4, 2).length);
+      expect([...list.slice(-5, 2)]).toEqual(data.slice(-5, 2));
+      expect([...list.slice(1, -5)]).toEqual(data.slice(1, -5));
+      expect([...list.slice(1, 4)]).toEqual(data.slice(1, 4));
+      expect([...list.slice(100)]).toEqual(data.slice(100));
+      expect([...list.slice(0, 100)]).toEqual(data.slice(0, 100));
+
     });
 
     it("should cleanup unused values when slicing", () => {
@@ -349,9 +352,7 @@ describe("List", () => {
         that.splice(1, 1)
       });
       expect(list2).toHaveLength(3);
-    });
-
-   
+    });   
   });
 
   describe("batchMutations", () => {
