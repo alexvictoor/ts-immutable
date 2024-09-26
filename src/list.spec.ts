@@ -264,7 +264,6 @@ describe("List", () => {
       expect([...list.slice(1, 4)]).toEqual(data.slice(1, 4));
       expect([...list.slice(100)]).toEqual(data.slice(100));
       expect([...list.slice(0, 100)]).toEqual(data.slice(0, 100));
-
     });
 
     it("should cleanup unused values when slicing", () => {
@@ -341,9 +340,15 @@ describe("List", () => {
       const list = List.of(1, 2, 3, 4);
       expect(list.splice(1, 1)).toHaveLength(3);
     });
-    it('should remove a given number of elements starting at a given index and add items', () => {
+    it('should add items at a given index', () => {
       const list = List.of(1, 2, 3, 4);
       expect(list.splice(1, 0, 42)).toHaveLength(5);
+    });
+
+    it('should add items at a given out of range index', () => {
+      const list = List.of(1, 2, 3, 4);
+      expect(list.splice(-1, 1, 42)).toHaveLength(4);
+      expect(list.splice(-1, -1, 42)).toHaveLength(5);
     });
 
     it('should remove all element starting at a given index within a mutation batch', () => {

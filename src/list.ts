@@ -586,17 +586,22 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
 
   splice = (start: number, deleteCount?: number, ...items: Array<T>): List<T> => {
 
+    const startIndex = this.correctOutOfRangeIndex(start);
+
     if (deleteCount === 0 && items.length === 0) {
       return this;
     }
     if (deleteCount === undefined) {
-      return this.slice(0, start);
+      return this.slice(0, startIndex);
     }
+
+    const deleteCountNormalized = Math.max(0, deleteCount);
+
     if (!this.isMutableCopy()) {
-      return this.slice(0, start).concat(items).concat(this.slice(start + deleteCount));
+      return this.slice(0, startIndex).concat(items).concat(this.slice(startIndex + deleteCountNormalized));
     }
     const safeCopy = this.buildImmutableCopy();
-    const result = safeCopy.slice(0, start).concat(items).concat(safeCopy.slice(start + deleteCount));
+    const result = safeCopy.slice(0, startIndex).concat(items).concat(safeCopy.slice(startIndex + deleteCountNormalized));
     this.updateState(result.root, result.tail, result.length, result.origin);
     return this;
   }
