@@ -443,7 +443,7 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     const newLength = Math.max(this.length - 1, 0);
 
     return this.batchMutations((that) => {
-      that.set(newLength, undefined);
+      that.doSet(newLength, undefined);
       let newTail = that.tail;
       let newRoot = that.root;
 
@@ -463,7 +463,7 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     });
   };
 
-  private set = (index: number, value: T | undefined): List<T> => {
+  private doSet = (index: number, value: T | undefined): List<T> => {
     let newRoot = this.root;
     let newTail = this.tail;
 
@@ -509,14 +509,17 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     return this.createList(newRoot, newTail, newLength, this.origin);
   };
 
-  with = (index: number, value: T): List<T> => this.set(index, value);
+  set = (index: number, value: T): List<T> => {
+    const correctedIndex =  index < 0 ? this.length + index : index;
+    return this.doSet(correctedIndex, value);
+  }
 
   shift = () => {
     if (this.isEmpty()) {
       return this;
     }
     return this.batchMutations((that) => {
-      that.set(0, undefined);
+      that.doSet(0, undefined);
       that.createList(that.root, that.tail, that.length - 1, that.origin + 1);
     });
   };
@@ -531,13 +534,13 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
       return this.batchMutations((that) =>
         that
           .createList(newRoot, that.tail, that.length + 1, newOrigin)
-          .with(0, value)
+          .set(0, value)
       );
     }
     return this.batchMutations((that) =>
       that
         .createList(that.root, that.tail, that.length + 1, that.origin - 1)
-        .with(0, value)
+        .set(0, value)
     );
   };
 

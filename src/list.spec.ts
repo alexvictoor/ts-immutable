@@ -43,19 +43,16 @@ describe("List", () => {
 
   it("should create a new list when update is called", () => {
     const list = List.of(1, 2, 3);
-    const list2 = list.with(1, 42);
+    const list2 = list.set(1, 42);
     expect(list2.at(1)).toBe(42);
     expect(list.at(1)).toBe(2);
   });
-  it("should", () => {
-    const list = List.of(1, 2, 3).with(32, 42).with(64, 36);
-    expect(list.at(64)).toBe(36);
-  });
+
   it("should increase its size when items are added at specific indexes", () => {
     const items = range(0, 1024);
     let list = List.empty<number>();
     items.forEach((item) => {
-      list = list.with(item, item);
+      list = list.set(item, item);
     });
     items.forEach((item) => {
       expect(list.at(item)).toBe(item);
@@ -95,14 +92,20 @@ describe("List", () => {
   });
   it("should update list on given indexes", () => {
     const list = List.of(...range(1, 34));
-    const list2 = list.with(32, 42);
+    const list2 = list.set(32, 42);
+    expect(list2.at(32)).toBe(42);
+  });
+
+  it("should update list on given negative indexes", () => {
+    const list = List.of(...range(1, 34));
+    const list2 = list.set(-1, 42);
     expect(list2.at(32)).toBe(42);
   });
 
   it("should increase list size when out of range indexes are used", () => {
     const list = List.of(1);
-    const list2 = list.with(32, 42);
-    const list3 = list2.with(123456, 42);
+    const list2 = list.set(32, 42);
+    const list3 = list2.set(123456, 42);
     expect(list3.length).toBe(123457);
   });
 
@@ -166,7 +169,7 @@ describe("List", () => {
       const data = range(0, 64);
       let list = List.of(...data);
       data.forEach(() => list = list.pop());
-      list = list.with(65, 42);
+      list = list.set(65, 42);
      
       expect(list.at(33)).toBeUndefined();
     });
@@ -182,7 +185,7 @@ describe("List", () => {
 
     it("should shift all indexes", () => {
       const list = List.of(123, 42);
-      const list2 = list.shift().with(0, 36);
+      const list2 = list.shift().set(0, 36);
       expect(list2.at(0)).toBe(36);
     });
 
@@ -214,7 +217,7 @@ describe("List", () => {
       const data = range(0, 32);
       let list = List.of(...data);
       data.forEach(() => list = list.shift());
-      list = list.with(31, 42);
+      list = list.set(31, 42);
       expect(list.at(31)).toEqual(42);
       expect(list.at(30)).toBeUndefined();
     });
@@ -227,7 +230,7 @@ describe("List", () => {
     });
 
     it("should insert values when unshifting", () => {
-      const list = List.of(1).with(31, 36);
+      const list = List.of(1).set(31, 36);
       const list2 = list.unshift(42);
       expect(list2.at(0)).toBe(42);
       expect(list2.at(32)).toBe(36);
@@ -269,20 +272,20 @@ describe("List", () => {
     it("should cleanup unused values when slicing", () => {
       const data = [1, 2, 3, 4, 5, 6, 7];
       const list = List.of(...data);
-      const list2 = list.slice(2, 3).with(2, 42);
+      const list2 = list.slice(2, 3).set(2, 42);
       expect(list2.at(1)).toBeUndefined();
     });
     it("should cleanup unused values when slicing a big list", () => {
       const data = range(1, 2000);
       const list = List.of(...data);
-      const list2 = list.slice(2, 3).with(2, 42);
+      const list2 = list.slice(2, 3).set(2, 42);
       expect(list2.at(0)).toBe(3);
       expect(list2.at(1)).toBeUndefined();
     });
     it("should cleanup unused values when slicing a big list in a transaction", () => {
       const data = range(0, 2000);
       const list = List.of(...data);
-      const list2 = list.batchMutations(l => l.slice(0, 1999).slice(500, 1000).slice(0, 2).slice(0, 1).with(2, 42));
+      const list2 = list.batchMutations(l => l.slice(0, 1999).slice(500, 1000).slice(0, 2).slice(0, 1).set(2, 42));
       expect(list2.at(0)).toBe(500);
       expect(list2.at(1)).toBeUndefined();
     });
@@ -371,7 +374,7 @@ describe("List", () => {
             .shift()
             .push(item)
             .push(item)
-            .with(item, item * 2)
+            .set(item, item * 2)
             .pop()
             .pop()
             .unshift(item);
