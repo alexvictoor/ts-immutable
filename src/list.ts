@@ -12,7 +12,7 @@ const isIterable = <T>(obj: unknown): obj is Iterable<T> => {
   return typeof obj[Symbol.iterator] === 'function';
 }
 
-type MutationBatchId = unknown | undefined;
+type MutationBatchId = unknown;
 
 class Node<T> {
   constructor(
