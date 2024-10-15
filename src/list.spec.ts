@@ -102,6 +102,18 @@ describe("List", () => {
     expect(list2.at(32)).toBe(42);
   });
 
+  it.skip("should update list on given negative indexes", () => {
+    const list = List.empty();
+    const list2 = list.set(-1, 42);
+    expect(list2.at(0)).toBe(42);
+  });
+
+  it.skip("should capacity changes after shifts", () => {
+    const list = List.of(1,2,3,4);
+    const list2 = list.shift().shift().set(30, 42).unshift(7);
+    expect(list2.at(0)).toBe(7);
+  });
+
   it("should increase list size when out of range indexes are used", () => {
     const list = List.of(1);
     const list2 = list.set(32, 42);
