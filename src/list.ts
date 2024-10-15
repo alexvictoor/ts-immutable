@@ -510,6 +510,14 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
 
   set = (index: number, value: T): List<T> => {
     const correctedIndex =  index < 0 ? this.length + index : index;
+    if (correctedIndex < 0) {
+      return this.batchMutations((that) => {
+        for (let index = 0; index < -correctedIndex; index++) {
+          that.unshift(undefined as any)
+        }
+        that.set(0, value);
+      });
+    }
     return this.doSet(correctedIndex, value);
   }
 
@@ -524,6 +532,9 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
   };
 
   unshift = (value: T): List<T> => {
+    if (this.isEmpty()) {
+      return this.set(0, value);
+    }
     if (this.origin === 0) {
       const newRoot = buildTrieWithMoreCapacityOnLeft(
         this.root,

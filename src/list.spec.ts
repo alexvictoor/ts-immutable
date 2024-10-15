@@ -102,10 +102,11 @@ describe("List", () => {
     expect(list2.at(32)).toBe(42);
   });
 
-  it.skip("should update list on given negative indexes", () => {
-    const list = List.empty();
-    const list2 = list.set(-1, 42);
+  it("should update list on given negative indexes", () => {
+    const list = List.of(1);
+    const list2 = list.set(-3, 42);
     expect(list2.at(0)).toBe(42);
+    expect(list2.at(2)).toBe(1);
   });
 
   it("should capacity changes after shifts", () => {
@@ -246,6 +247,11 @@ describe("List", () => {
       const list2 = list.unshift(42);
       expect(list2.at(0)).toBe(42);
       expect(list2.at(32)).toBe(36);
+    });
+
+    it("should unshift value when list is empty", () => {
+      const list = List.empty().unshift(42).set(1, 36); 
+      expect(list.at(0)).toBe(42);
     });
   });
   describe("slice", () => {

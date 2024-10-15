@@ -5,9 +5,9 @@ import { List } from './list';
 
 
 describe('Lists and Immutable Lists', () => {
-    it('should behave the same way when setting values with positive indexes ', () => {
+    it('should behave the same way when setting values with indexes ', () => {
       fc.assert(
-        fc.property(fc.array(fc.tuple(fc.integer({ max: 10000, min: 0 }), fc.float()), { maxLength: 100 }), (testData) => {
+        fc.property(fc.array(fc.tuple(fc.integer({ max: 1000, min: -100 }), fc.float()), { maxLength: 100 }), (testData) => {
           let immList = Immutable.List();
           let list = List.empty();
           testData.forEach(([index, value]) => {
