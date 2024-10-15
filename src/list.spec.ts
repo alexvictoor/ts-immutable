@@ -108,7 +108,7 @@ describe("List", () => {
     expect(list2.at(0)).toBe(42);
   });
 
-  it.skip("should capacity changes after shifts", () => {
+  it("should capacity changes after shifts", () => {
     const list = List.of(1,2,3,4);
     const list2 = list.shift().shift().set(30, 42).unshift(7);
     expect(list2.at(0)).toBe(7);

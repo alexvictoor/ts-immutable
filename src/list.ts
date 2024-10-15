@@ -282,8 +282,7 @@ class MutableList<T> {
     this.updateCapacity();
   };
 
-  private updateCapacity = () =>
-    (this.capacity = 1 << (this.root.level + SHIFT));
+  private updateCapacity = () => this.capacity = this.root.computeCapacity();
 
   protected stopMutations = () => (this.batchMutationId = undefined);
 }
@@ -325,7 +324,6 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     protected readonly batchMutationId: MutationBatchId = undefined
   ) {
     super(root, tail, length, origin, batchMutationId);
-    this.capacity = 1 << (this.root.level + SHIFT);
   }
 
   private normalizeIndex = (index: number) => index + this.origin;
@@ -422,7 +420,7 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
           tailOffset,
           this.tail,
           this.batchMutationId
-        ),
+        ), 
         newTail,
         this.length + 1,
         this.origin
@@ -468,21 +466,22 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     let newTail = this.tail;
 
     const oldTailOffset = getTailOffset(this.length + this.origin);
+    const treeIndex = this.normalizeIndex(index);
+
     // need at least one more layer
-    if (index >= this.capacity) {
+    if (treeIndex >= this.capacity) {
       newRoot = buildHigherCapacityTrie(
         newRoot,
         this.batchMutationId
       ).insertLeaf(oldTailOffset, this.tail, this.batchMutationId);
       newTail = new Leaf<T>([], this.batchMutationId);
-      while (index >= newRoot.computeCapacity()) {
+      while (treeIndex >= newRoot.computeCapacity()) {
         newRoot = buildHigherCapacityTrie(newRoot, this.batchMutationId);
       }
     }
 
     const newLength = index < this.length ? this.length : index + 1;
 
-    const treeIndex = this.normalizeIndex(index);
     const newTailOffset = getTailOffset(newLength + this.origin);
 
     // tail needs to change
@@ -500,7 +499,7 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
       newTail = newTail.set(treeIndex, value, this.batchMutationId);
     } else {
       newRoot = newRoot.set(
-        this.normalizeIndex(index),
+        treeIndex,
         value,
         this.batchMutationId
       );
