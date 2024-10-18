@@ -179,12 +179,15 @@ describe("List", () => {
     });
 
     it("should cleanup when poping", () => {
-      const data = range(0, 64);
-      let list = List.of(...data);
-      data.forEach(() => list = list.pop());
-      list = list.set(65, 42);
-     
-      expect(list.at(33)).toBeUndefined();
+      let list = List.of(0).set(31, 31).set(32, 32);
+      list = list.pop().pop();
+      list = list.set(33, 33);
+      expect(list.at(31)).toBeUndefined();
+    });
+
+    it("should remove only poped value", () => {
+      const list = List.of(1).unshift(-1).pop();
+      expect(list.at(0)).toBe(-1);
     });
   });
 

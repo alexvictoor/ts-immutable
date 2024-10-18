@@ -14,6 +14,8 @@ const isIterable = <T>(obj: unknown): obj is Iterable<T> => {
 
 type MutationBatchId = unknown;
 
+// TODO type opaque treeindex
+
 class Node<T> {
   constructor(
     public children: Array<Node<T> | undefined> | Array<Leaf<T> | undefined>,
@@ -64,9 +66,9 @@ class Node<T> {
     return new Node<T>(newChildren, this.level, mutationBatchId);
   };
 
-  insertLeaf = (
+  private doInsertLeaf = (
     index: number,
-    leaf: Leaf<T>,
+    leaf: Leaf<T> | undefined,
     mutationBatchId: MutationBatchId
   ) => {
     const childIndex = this.computeChildIndex(index);
@@ -82,7 +84,7 @@ class Node<T> {
     const child = (this.children[childIndex] ||
       this.createNewEmptyChild(mutationBatchId)) as Node<T>;
     if (this.isInSameBatch(mutationBatchId)) {
-      this.children[childIndex] = child.insertLeaf(
+      this.children[childIndex] = child.doInsertLeaf(
         index,
         leaf,
         mutationBatchId
@@ -90,10 +92,21 @@ class Node<T> {
       return this;
     }
     const newChildren = this.children.slice();
-    newChildren[childIndex] = child.insertLeaf(index, leaf, mutationBatchId);
+    newChildren[childIndex] = child.doInsertLeaf(index, leaf, mutationBatchId);
     return new Node<T>(newChildren, this.level, mutationBatchId);
   };
 
+  insertLeaf = (
+    index: number,
+    leaf: Leaf<T>,
+    mutationBatchId: MutationBatchId
+  ) => this.doInsertLeaf(index, leaf, mutationBatchId);
+
+  removeLeaf = (
+    index: number,
+    mutationBatchId: MutationBatchId
+  ) => this.doInsertLeaf(index, undefined, mutationBatchId);
+  
   getLeaf = (index: number) => {
     const childrenIndex = this.computeChildIndex(index);
     const child = this.children[childrenIndex];
@@ -107,6 +120,7 @@ class Node<T> {
     return child.getLeaf(index);
   };
 
+  // TODO index inclusif ou exclusif
   removeAfter = (index: number,  mutationBatchId: MutationBatchId
   ) => {
     const childIndex = this.computeChildIndex(index);
@@ -125,6 +139,7 @@ class Node<T> {
     return new Node<T>(newChildren, this.level, mutationBatchId);
   };
 
+  // TODO index inclusif ou exclusif
   removeBefore = (index: number,  mutationBatchId: MutationBatchId
   ) => {
     const childIndex = this.computeChildIndex(index);
@@ -132,7 +147,7 @@ class Node<T> {
     const cleanChild = child ? child.removeBefore(index, mutationBatchId) : undefined;
 
     if (this.isInSameBatch(mutationBatchId)) {
-      this.children.splice(0, childIndex, ...emptyArray(childIndex));
+      this.children.splice(0, childIndex, ...emptyArray(childIndex)); // TODO WTF
       this.children[childIndex] = cleanChild;
       return this;
     }
@@ -437,29 +452,23 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
 
   push = (...values: Array<T>) => this.batchMutations(that => values.forEach(that.pushASingleValue))
 
-  pop = () => {
-    const newLength = Math.max(this.length - 1, 0);
 
-    return this.batchMutations((that) => {
-      that.doSet(newLength, undefined);
-      let newTail = that.tail;
-      let newRoot = that.root;
-
-      if ((newLength & MASK) === 0) {
-        if (isLeaf(that.root)) {
-          newTail = that.root;
-        } else {
-          newRoot = that.root.insertLeaf(
-            newLength,
-            newTail,
-            that.batchMutationId
-          );
-          newTail = newRoot.getLeaf(Math.max(newLength - 1, 0));
-        }
+  pop = () => this.batchMutations((that) => {
+      const newLength = Math.max(this.length - 1, 0);
+      if (newLength === 0) {
+        const newTail = new Leaf<T>([]);
+        that.createList(newTail, newTail, 0, 0);
+      } else if (((that.origin + newLength) & MASK) === 0) {
+        const root = that.root as Node<T>;
+        const lastElementTreeIndex = Math.max(that.origin + newLength - 1, 0);
+        const newTail = root.getLeaf(lastElementTreeIndex);
+        const newRoot = root.removeLeaf(that.origin + newLength, that.batchMutationId).removeLeaf(lastElementTreeIndex, that.batchMutationId);
+        that.createList(newRoot, newTail, newLength, that.origin);
+      } else {
+        const newTail = that.tail.set(that.origin + newLength, undefined, that.batchMutationId);
+        that.createList(that.root, newTail, newLength, that.origin);
       }
-      that.createList(newRoot, newTail, newLength, that.origin);
     });
-  };
 
   private doSet = (index: number, value: T | undefined): List<T> => {
     let newRoot = this.root;
