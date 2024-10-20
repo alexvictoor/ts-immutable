@@ -28,7 +28,7 @@ describe("Lists and Immutable Lists", () => {
         fc.array(
           fc.tuple(
             fc.constantFrom("push", "pop", "shift", "unshift", "set", "insert"),
-            fc.tuple(fc.integer({ max: 1000, min: -100 }), fc.float())
+            fc.tuple(fc.integer({ max: 1000, min: -1000 }), fc.float())
           ),
           { maxLength: 10000 }
         ),
@@ -57,10 +57,10 @@ describe("Lists and Immutable Lists", () => {
 
             }
           });
-          const expected = immList.map(x => x === null ? undefined : x);
-          expect([...list]).toEqual(expected.toJS());
+          const expected = immList.toJS().map(x => x === null ? undefined : x);
+          expect([...list]).toEqual(expected);
         }
-      )
+      ), { numRuns: 1000 }
     );
   });
 });
