@@ -264,7 +264,7 @@ const buildTrieWithMoreCapacityOnLeft = <T>(
 ): Trie<T> => {
   const newLevel = trie.level + SHIFT;
   if (isLeaf(trie)) {
-    return new Node<T>([undefined, trie], newLevel, batchMutationId);
+    return new Node<T>([], newLevel, batchMutationId);
   }
   return new Node<T>([undefined, trie], newLevel, batchMutationId);
 };
@@ -494,7 +494,7 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     const newTailOffset = getTailOffset(newLength + this.origin);
 
     // tail needs to change
-    if (newTailOffset > oldTailOffset && oldTailOffset !== 0) {
+    if (newTailOffset > oldTailOffset) {
       newRoot = (newRoot as Node<T>).insertLeaf(
         oldTailOffset,
         this.tail,
@@ -642,4 +642,6 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
       },
     };
   };
+
+  toJS = () => [...this];
 }

@@ -256,6 +256,11 @@ describe("List", () => {
       const list = List.empty().unshift(42).set(1, 36); 
       expect(list.at(0)).toBe(42);
     });
+
+    it("should not forget values when used with pop", () => {
+      const list = List.empty().push(0).unshift(-1).pop().set(1, 1); 
+      expect(list.at(0)).toBe(-1);
+    });
   });
   describe("slice", () => {
     it("should copy everything when slicing without parameters", () => {
