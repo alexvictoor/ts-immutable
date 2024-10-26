@@ -321,11 +321,18 @@ describe("List", () => {
       const list = List.of(0).set(-3, -3);
       expect(list.slice(1).toJS()).toEqual([undefined, 0]);
     });
-    it("should  not forget data when slicing (again)", () => {
+    it("should not forget data when slicing (again)", () => {
       const data = range(0, 2000);
       const list = List.of(...data);
       const list2 = list.slice(0, 1999);
       expect(list2.at(33)).toBe(33);
+    });
+
+    it("should cleanup when slicing", () => {
+      const data = range(0, 1000);
+      const list = List.of(...data);
+      const list2 = list.slice(407, 410).set(12, -100);
+      expect(list2.at(3)).toBeUndefined();
     });
   });
 

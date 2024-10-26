@@ -63,4 +63,19 @@ describe("Lists and Immutable Lists", () => {
       ), { numRuns: 1000 }
     );
   });
+
+  it("should behave the same way when slicing", () => {
+    fc.assert(
+      fc.property(
+        fc.tuple(fc.array(fc.string(), { minLength: 320 }), fc.nat(), fc.nat())
+        ,
+        (testData) => {
+          let immList = Immutable.List.of(...testData[0]).slice(testData[1], testData[1] + testData[2]);
+          let list = List.of(...testData[0]).slice(testData[1], testData[1] + testData[2]);
+         
+          expect(list.toJS()).toEqual(immList.toJS());
+        }
+      )
+    , { numRuns: 100 });
+  });
 });

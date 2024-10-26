@@ -14,7 +14,7 @@ const isIterable = <T>(obj: unknown): obj is Iterable<T> => {
 
 type MutationBatchId = unknown;
 
-// TODO type opaque treeindex
+type TreeIndex = number & { __tag: 'TreeIndex' };
 
 class Node<T> {
   constructor(
@@ -36,13 +36,13 @@ class Node<T> {
   private isInSameBatch = (mutationBatchId?: MutationBatchId) =>
     mutationBatchId && mutationBatchId === this.mutationBatchId;
 
-  findValueAt = (index: number): T | undefined => {
+  findValueAt = (index: TreeIndex): T | undefined => {
     const childrenIndex = this.computeChildIndex(index);
     return this.children[childrenIndex]?.findValueAt(index);
   };
 
   set = (
-    updateIndex: number,
+    updateIndex: TreeIndex,
     updateValue: T | undefined,
     mutationBatchId: MutationBatchId
   ) => {
@@ -67,7 +67,7 @@ class Node<T> {
   };
 
   private doInsertLeaf = (
-    index: number,
+    index: TreeIndex,
     leaf: Leaf<T> | undefined,
     mutationBatchId: MutationBatchId
   ) => {
@@ -97,17 +97,17 @@ class Node<T> {
   };
 
   insertLeaf = (
-    index: number,
+    index: TreeIndex,
     leaf: Leaf<T>,
     mutationBatchId: MutationBatchId
   ) => this.doInsertLeaf(index, leaf, mutationBatchId);
 
   removeLeaf = (
-    index: number,
+    index: TreeIndex,
     mutationBatchId: MutationBatchId
   ) => this.doInsertLeaf(index, undefined, mutationBatchId);
   
-  getLeaf = (index: number) => {
+  getLeaf = (index: TreeIndex) => { 
     const childrenIndex = this.computeChildIndex(index);
     const child = this.children[childrenIndex];
 
@@ -120,8 +120,7 @@ class Node<T> {
     return child.getLeaf(index);
   };
 
-  // TODO index inclusif ou exclusif
-  removeAfter = (index: number,  mutationBatchId: MutationBatchId
+  removeAfter = (index: TreeIndex,  mutationBatchId: MutationBatchId
   ) => {
     const childIndex = this.computeChildIndex(index);
     const child = this.children[childIndex];
@@ -139,8 +138,7 @@ class Node<T> {
     return new Node<T>(newChildren, this.level, mutationBatchId);
   };
 
-  // TODO index inclusif ou exclusif
-  removeBefore = (index: number,  mutationBatchId: MutationBatchId
+  removeBefore = (index: TreeIndex,  mutationBatchId: MutationBatchId
   ) => {
     const childIndex = this.computeChildIndex(index);
     const child = this.children[childIndex];
@@ -184,7 +182,7 @@ class Leaf<T> {
   };
 
   set = (
-    updateIndex: number,
+    updateIndex: TreeIndex,
     updateValue: T | undefined,
     mutationBatchId: MutationBatchId
   ) => {
@@ -198,12 +196,12 @@ class Leaf<T> {
     return new Leaf<T>(newChildren, mutationBatchId);
   };
 
-  removeAfter = (index: number,  mutationBatchId: MutationBatchId
+  removeAfter = (index: TreeIndex,  mutationBatchId: MutationBatchId
   ) => {
-    if (index >= SIZE) {
-      return this;
-    }
     const childIndex = this.computeChildIndex(index);
+    if (childIndex === 0) {
+      return this
+    }
     
     if (this.isInSameBatch(mutationBatchId)) {
       this.children.splice(childIndex, SIZE - childIndex);
@@ -214,7 +212,7 @@ class Leaf<T> {
     return new Leaf<T>(newChildren, mutationBatchId);
   };
 
-  removeBefore = (index: number,  mutationBatchId: MutationBatchId
+  removeBefore = (index: TreeIndex,  mutationBatchId: MutationBatchId
   ) => {
     const childIndex = this.computeChildIndex(index);
     
@@ -307,9 +305,11 @@ class MutableList<T> {
   protected stopMutations = () => (this.batchMutationId = undefined);
 }
 
-const getTailOffset = (size) => {
-  return size < SIZE ? 0 : ((size - 1) >>> SHIFT) << SHIFT;
+const getTailOffset = (size: number): TreeIndex => {
+  return (size < SIZE ? 0 : ((size - 1) >>> SHIFT) << SHIFT) as TreeIndex;
 };
+
+const buildTreeIndex = (origin: number, index: number) => origin + index as TreeIndex;
 
 const EMPTY_LEAF = new Leaf<any>(new Array(32));
 
@@ -346,7 +346,7 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     super(root, tail, length, origin, batchMutationId);
   }
 
-  private normalizeIndex = (index: number) => index + this.origin;
+  private normalizeIndex = (index: number): TreeIndex => index + this.origin as TreeIndex;
 
   private buildMutableCopy = (): List<T> => {
     if (this.isMutableCopy()) {
@@ -463,14 +463,21 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
       if (newLength === 0) {
         const newTail = new Leaf<T>([]);
         that.createList(newTail, newTail, 0, 0);
-      } else if (((that.origin + newLength) & MASK) === 0) {
+        return;
+      } 
+   
+      const oldTailOffset = getTailOffset(that.length + that.origin);
+      const newTailOffset = getTailOffset(newLength + that.origin);
+   
+      if (oldTailOffset !== newTailOffset) {
         const root = that.root as Node<T>;
-        const lastElementTreeIndex = Math.max(that.origin + newLength - 1, 0);
+        const lastElementTreeIndex = that.normalizeIndex(newLength - 1);
         const newTail = root.getLeaf(lastElementTreeIndex);
-        const newRoot = root.removeLeaf(that.origin + newLength, that.batchMutationId).removeLeaf(lastElementTreeIndex, that.batchMutationId);
+        const newRoot = root.removeLeaf(lastElementTreeIndex, that.batchMutationId);
         that.createList(newRoot, newTail, newLength, that.origin);
       } else {
-        const newTail = that.tail.set(that.origin + newLength, undefined, that.batchMutationId);
+        const formerLastIndex = that.normalizeIndex(newLength);
+        const newTail = that.tail.set(formerLastIndex, undefined, that.batchMutationId);
         that.createList(that.root, newTail, newLength, that.origin);
       }
     });
@@ -584,10 +591,10 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     const newTailOffset = getTailOffset(newLength + newOrigin);
 
     return this.batchMutations((that) => {
-      let newRoot = that.root.removeAfter(newOrigin + newLength, that.batchMutationId).removeBefore(newOrigin, that.batchMutationId);
+      let newRoot = that.root.removeAfter(buildTreeIndex(newOrigin, newLength), that.batchMutationId).removeBefore(buildTreeIndex(newOrigin, 0), that.batchMutationId);
       let newTail: Leaf<T>;
       if (newTailOffset === oldTailOffset) {
-        newTail = that.tail.removeAfter(newOrigin + newLength - newTailOffset, that.batchMutationId);
+        newTail = that.tail.removeAfter(buildTreeIndex(newOrigin, newLength), that.batchMutationId);
       } else {
         newTail = (newRoot as Node<T>).getLeaf(newTailOffset);
         newRoot = (newRoot as Node<T>).removeLeaf(newTailOffset, that.batchMutationId);
