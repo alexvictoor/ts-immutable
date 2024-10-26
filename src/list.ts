@@ -200,6 +200,9 @@ class Leaf<T> {
 
   removeAfter = (index: number,  mutationBatchId: MutationBatchId
   ) => {
+    if (index >= SIZE) {
+      return this;
+    }
     const childIndex = this.computeChildIndex(index);
     
     if (this.isInSameBatch(mutationBatchId)) {
@@ -584,7 +587,7 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
       let newRoot = that.root.removeAfter(newOrigin + newLength, that.batchMutationId).removeBefore(newOrigin, that.batchMutationId);
       let newTail: Leaf<T>;
       if (newTailOffset === oldTailOffset) {
-        newTail = that.tail.removeAfter(newOrigin + newLength - newTailOffset, that.batchMutationId)
+        newTail = that.tail.removeAfter(newOrigin + newLength - newTailOffset, that.batchMutationId);
       } else {
         newTail = (newRoot as Node<T>).getLeaf(newTailOffset);
         newRoot = (newRoot as Node<T>).removeLeaf(newTailOffset, that.batchMutationId);
@@ -599,7 +602,7 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
   }
 
   insert = (index: number, value: T): List<T> => {
-    const normalizedIndex = Math.max(0, Math.min(index, this.length)); 
+    const normalizedIndex = this.correctOutOfRangeIndex(index);
     if (!this.isMutableCopy()) {
       return this.slice(0, normalizedIndex).concat(value, this.slice(normalizedIndex));
     } 

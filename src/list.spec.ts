@@ -359,15 +359,13 @@ describe("List", () => {
     });
     it("should insert at the beginning with negative index", () => {
       const list = List.of(0, 1, 2);
-      expect(list.batchMutations(that => that.insert(-1, 42)).at(0)).toBe(42);
-      expect(list.insert(-1, 42).at(0)).toBe(42);
+      expect(list.batchMutations(that => that.insert(-1, 42)).at(2)).toBe(42);
+      expect(list.insert(-1, 42).at(2)).toBe(42);
     });
-    // [[["push",[0,0]],["set",[-3,0]],["insert",[1,0]]]]
-    it.skip("should not forget data when inserting", () => {
-      const list = List.of().push(0).set(-3, -3).insert(1,1); //?
-      //List.of().push(0).set(-3, -3).toJS(); //?
-      //List.of().push(0).set(-3, -3).insert(1,1).toJS(); //?
-      expect(list.toJS()).toEqual([-3, 1, undefined, 0]);
+
+    it("should not forget data when inserting", () => {
+      const list = List.empty().set(415, 415).insert(-1, -1);
+      expect(list.at(416)).toEqual(415);
     });
 
     
@@ -383,7 +381,6 @@ describe("List", () => {
     it('should do nothing if delete count is zero', () => {
       const list = List.of(1, 2, 3, 4);
       expect(list.splice(1, 0)).toBe(list);
-      //expect(list.splice(1, undefined)).toBe(list);
     });
 
     it('should remove a given number of elements starting at a given index', () => {
@@ -407,7 +404,12 @@ describe("List", () => {
         that.splice(1, 1)
       });
       expect(list2).toHaveLength(3);
-    });   
+    });  
+    
+    it("should slice end of list", () => {
+      const list = List.empty().set(415, 415);
+      expect(list.slice(415).toJS()).toEqual([415]);
+    });
   });
 
   describe("batchMutations", () => {

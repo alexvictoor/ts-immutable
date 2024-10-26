@@ -28,7 +28,7 @@ describe("Lists and Immutable Lists", () => {
         fc.array(
           fc.tuple(
             fc.constantFrom("push", "pop", "shift", "unshift", "set", "insert"),
-            fc.tuple(fc.integer({ max: 1000, min: -1000 }), fc.float())
+            fc.tuple(fc.integer({ max: 1000, min: -1000 }), fc.nat())
           ),
           { maxLength: 10000 }
         ),
@@ -49,8 +49,8 @@ describe("Lists and Immutable Lists", () => {
               immList = immList.unshift(value);
               list = list.unshift(value);
             } else if (op === "insert") {
-              immList = immList.unshift(value);
-              list = list.unshift(value);
+              immList = immList.insert(index, value);
+              list = list.insert(index, value);
             } else {
               immList = immList.set(index, value);
               list = list.set(index, value);
