@@ -199,9 +199,6 @@ class Leaf<T> {
   removeAfter = (index: TreeIndex,  mutationBatchId: MutationBatchId
   ) => {
     const childIndex = this.computeChildIndex(index);
-    if (childIndex === 0) {
-      return this
-    }
     
     if (this.isInSameBatch(mutationBatchId)) {
       this.children.splice(childIndex, SIZE - childIndex);
@@ -594,7 +591,14 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
       let newRoot = that.root.removeAfter(buildTreeIndex(newOrigin, newLength), that.batchMutationId).removeBefore(buildTreeIndex(newOrigin, 0), that.batchMutationId);
       let newTail: Leaf<T>;
       if (newTailOffset === oldTailOffset) {
-        newTail = that.tail.removeAfter(buildTreeIndex(newOrigin, newLength), that.batchMutationId);
+        if (endIndex === this.length) {
+          newTail = that.tail;
+        } else {
+          newTail = that.tail.removeAfter(buildTreeIndex(newOrigin, newLength), that.batchMutationId);
+        }
+        if (startIndex > newTailOffset) {
+          newTail = newTail.removeBefore(buildTreeIndex(newOrigin, 0), that.batchMutationId);
+        }
       } else {
         newTail = (newRoot as Node<T>).getLeaf(newTailOffset);
         newRoot = (newRoot as Node<T>).removeLeaf(newTailOffset, that.batchMutationId);
@@ -632,7 +636,7 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
 
     const deleteCountNormalized = Math.max(0, deleteCount);
 
-    if (!this.isMutableCopy()) {
+    if (!this.isMutableCopy()) {      
       return this.slice(0, startIndex).concat(items).concat(this.slice(startIndex + deleteCountNormalized));
     }
     const safeCopy = this.buildImmutableCopy();

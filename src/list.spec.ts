@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { List } from "./list";
+import Immutable from "immutable";
 
 const range = (start: number, end: number) =>
   Array.from({ length: end - start }, (_, index) => index + start);
@@ -334,6 +335,17 @@ describe("List", () => {
       const list2 = list.slice(407, 410).set(12, -100);
       expect(list2.at(3)).toBeUndefined();
     });
+
+    it('should cleanup when slicing (again)', () => {
+      const list = List.of().slice(2, 2).set(222, 222);
+      expect(list.at(0)).toBeUndefined();
+    });
+
+    it("should slice end of list", () => {
+      const list = List.empty().set(415, 415);
+      expect(list.slice(415).toJS()).toEqual([415]);
+    });
+
   });
 
   describe("concat", () => {
@@ -413,10 +425,6 @@ describe("List", () => {
       expect(list2).toHaveLength(3);
     });  
     
-    it("should slice end of list", () => {
-      const list = List.empty().set(415, 415);
-      expect(list.slice(415).toJS()).toEqual([415]);
-    });
   });
 
   describe("batchMutations", () => {
