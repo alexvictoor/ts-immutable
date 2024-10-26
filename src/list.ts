@@ -147,13 +147,15 @@ class Node<T> {
     const cleanChild = child ? child.removeBefore(index, mutationBatchId) : undefined;
 
     if (this.isInSameBatch(mutationBatchId)) {
-      this.children.splice(0, childIndex, ...emptyArray(childIndex)); // TODO WTF
+      this.children.splice(0, childIndex, ...emptyArray(childIndex));
       this.children[childIndex] = cleanChild;
       return this;
     }
-    let newChildren = this.children.slice().splice(0, childIndex, ...emptyArray(childIndex));
+    let newChildren = this.children.slice();
+    newChildren.splice(0, childIndex, ...emptyArray(childIndex));
     if (cleanChild) {
-      newChildren.push(cleanChild as any);
+      //newChildren.push(cleanChild as any);
+      newChildren[childIndex] = cleanChild;
     }
     return new Node<T>(newChildren, this.level, mutationBatchId);
   };
@@ -570,7 +572,7 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     const endIndex = this.correctOutOfRangeIndex(end);
     let newLength = Math.max(0, endIndex - startIndex);
     let newOrigin = startIndex + this.origin;
-
+    
     if (newLength === this.length) {
       return this;
     }
@@ -579,13 +581,14 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     const newTailOffset = getTailOffset(newLength + newOrigin);
 
     return this.batchMutations((that) => {
-      if (oldTailOffset === newTailOffset || isLeaf(that.root)) {
-        const newTail = that.tail.removeAfter(newOrigin + newLength, that.batchMutationId).removeBefore(newOrigin, that.batchMutationId);
-        return that.createList(that.root, newTail, newLength, newOrigin);
+      let newRoot = that.root.removeAfter(newOrigin + newLength, that.batchMutationId).removeBefore(newOrigin, that.batchMutationId);
+      let newTail: Leaf<T>;
+      if (newTailOffset === oldTailOffset) {
+        newTail = that.tail.removeAfter(newOrigin + newLength - newTailOffset, that.batchMutationId)
+      } else {
+        newTail = (newRoot as Node<T>).getLeaf(newTailOffset);
+        newRoot = (newRoot as Node<T>).removeLeaf(newTailOffset, that.batchMutationId);
       }
-  
-      const newRoot = that.root.removeAfter(newOrigin + newLength, that.batchMutationId).removeBefore(newOrigin, that.batchMutationId);
-      const newTail = newRoot.getLeaf(newTailOffset);
       return that.createList(newRoot, newTail, newLength, newOrigin);
     });
   };

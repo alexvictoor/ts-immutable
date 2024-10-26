@@ -312,8 +312,20 @@ describe("List", () => {
       const data = range(0, 2000);
       const list = List.of(...data);
       const list2 = list.batchMutations(l => l.slice(0, 1999).slice(500, 1000).slice(0, 2).slice(0, 1).set(2, 42));
+      list2.toJS(); //?
       expect(list2.at(0)).toBe(500);
       expect(list2.at(1)).toBeUndefined();
+    });
+
+    it("should not forget data when slicing", () => {
+      const list = List.of(0).set(-3, -3);
+      expect(list.slice(1).toJS()).toEqual([undefined, 0]);
+    });
+    it("should  not forget data when slicing (again)", () => {
+      const data = range(0, 2000);
+      const list = List.of(...data);
+      const list2 = list.slice(0, 1999);
+      expect(list2.at(33)).toBe(33);
     });
   });
 
@@ -350,6 +362,15 @@ describe("List", () => {
       expect(list.batchMutations(that => that.insert(-1, 42)).at(0)).toBe(42);
       expect(list.insert(-1, 42).at(0)).toBe(42);
     });
+    // [[["push",[0,0]],["set",[-3,0]],["insert",[1,0]]]]
+    it.skip("should not forget data when inserting", () => {
+      const list = List.of().push(0).set(-3, -3).insert(1,1); //?
+      //List.of().push(0).set(-3, -3).toJS(); //?
+      //List.of().push(0).set(-3, -3).insert(1,1).toJS(); //?
+      expect(list.toJS()).toEqual([-3, 1, undefined, 0]);
+    });
+
+    
   });
 
   describe("splice", () => {
