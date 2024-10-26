@@ -25,7 +25,7 @@ class Node<T> {
 
   public computeCapacity = () => 1 << (this.level + SHIFT);
 
-  private computeChildIndex = (index: number): number =>
+  private computeChildIndex = (index: TreeIndex): number =>
     (index >> this.level) & MASK;
 
   private createNewEmptyChild = (mutationBatchId: MutationBatchId): Trie<T> =>
@@ -171,12 +171,12 @@ class Leaf<T> {
 
   public computeCapacity = () => SIZE;
 
-  private computeChildIndex = (index: number): number => index & MASK;
+  private computeChildIndex = (index: TreeIndex): number => index & MASK;
 
   private isInSameBatch = (mutationBatchId: MutationBatchId) =>
     mutationBatchId && mutationBatchId === this.mutationBatchId;
 
-  findValueAt = (index: number): T | undefined => {
+  findValueAt = (index: TreeIndex): T | undefined => {
     const childrenIndex = (index >> this.level) & MASK;
     return this.children[childrenIndex];
   };
