@@ -418,6 +418,8 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     return copy;
   };
 
+  withMutations = this.batchMutations;
+
   private pushASingleValue = (value: T) => {
     const insertionIndex = this.normalizeIndex(this.length);
     const tailOffset = getTailOffset(this.length + this.origin);
@@ -660,5 +662,11 @@ export class List<T> extends MutableList<T> implements Iterable<T> {
     };
   };
 
-  toJS = () => [...this];
+  toJS = () => {
+    const result = new Array<T>(this.length);
+    for (let index = 0; index < this.length; index++) {
+      result[index] = this.at(index);
+    }
+    return result;
+  };
 }
