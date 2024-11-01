@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "lib": ["es2017", "DOM"],
+  },
+
+  "include": ["src/**/*"]
+}

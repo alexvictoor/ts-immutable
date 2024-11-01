@@ -4,6 +4,7 @@
   "description": "Immutable collections written in TypeScript",
   "main": "index.js",
   "scripts": {
+    "dist": "tsc --project tsconfig.dist.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "alexvictoor@gmail.com",
