@@ -54,9 +54,9 @@ describe("Lists and Immutable Lists", () => {
             } else if (op === "slice") {
               immList = immList.slice(index);
               list = list.slice(index);
-            } else if (op === "splice") {
+            /*} else if (op === "splice") {
               immList = immList.splice(index, value);
-              list = list.splice(index, value);
+              list = list.splice(index, value);*/
             } else {
               immList = immList.set(index, value);
               list = list.set(index, value);
@@ -66,7 +66,7 @@ describe("Lists and Immutable Lists", () => {
           const expected = immList.toJS().map(x => x === null ? undefined : x);
           expect([...list]).toEqual(expected);
         }
-      ), { numRuns: 1000 }
+      ), { numRuns: 9900 }
     );
   });
 

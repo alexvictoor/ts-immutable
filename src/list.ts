@@ -122,6 +122,9 @@ class Node<T> {
 
   removeAfter = (index: TreeIndex,  mutationBatchId: MutationBatchId
   ) => {
+    if (index === 1 << (this.level + SHIFT)) {
+      return this;
+    }
     const childIndex = this.computeChildIndex(index);
     const child = this.children[childIndex];
     const cleanChild = child ? child.removeAfter(index, mutationBatchId) : undefined;

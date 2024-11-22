@@ -6,6 +6,12 @@ const range = (start: number, end: number) =>
   Array.from({ length: end - start }, (_, index) => index + start);
 
 describe("List", () => {
+
+  it('should slice beginning of list', () => {
+    const list = List.of().push(0).unshift(-1).unshift(-2).pop().pop().set(2, 2);
+    expect(list.at(0)).toBe(-2);
+  });
+  
   it("should be created from parameters that can be undefined", () => {
     const list = List.of(1, 2, 3, undefined, 4, 5);
     expect([...list]).toEqual([1, 2, 3, undefined, 4, 5]);
@@ -344,6 +350,11 @@ describe("List", () => {
     it("should slice end of list", () => {
       const list = List.empty().set(415, 415);
       expect(list.slice(415).toJS()).toEqual([415]);
+    });
+
+    it('should slice beginning of list', () => {
+      const list = List.of(0).unshift(-1).unshift(-2).set(993, 993).slice(1); //?
+      expect(list.at(0)).toBe(-1);
     });
 
   });
